@@ -42,8 +42,14 @@ def build_nuklear_defs(filename, header):
     in enum declarations.
     """
 
+    # Define some options to prune the header.
+    header_only_options = """
+    #define NK_STATIC_ASSERT(X) 
+
+    """
+
     print "Preprocessing header..."
-    preprocessed_text = run_c_preprocessor(header)
+    preprocessed_text = run_c_preprocessor(header_only_options + header)
 
     print "Evaluating << expressions..."
     shift_expr = "\\(1 << \\(([0-9]+)\\)\\)"
@@ -72,13 +78,6 @@ def build_nuklear_defs(filename, header):
     def replace_or(match):
         return str(evaluate_or(match.group(0)))
     preprocessed_text = re.sub(or_expr, replace_or, preprocessed_text)
-
-    print "Removing dummy_array..."
-    preprocessed_text = re.sub(
-        "typedef char _dummy_array.*;",
-        "",
-        preprocessed_text
-    )
 
     print "Stubbing nk_table..."
     preprocessed_text = re.sub(
