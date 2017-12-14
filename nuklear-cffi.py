@@ -32,7 +32,7 @@ def run_c_preprocessor(header_contents):
     return subprocess.check_output(["cpp", "-P", filename])
 
 
-def build_nuklear_defs(filename, header):
+def build_nuklear_defs(filename, header, extra_cdef):
     """
     Preprocess the header file and extract declarations, writing the
     declarations to the given output filename.
@@ -88,7 +88,7 @@ def build_nuklear_defs(filename, header):
         flags=re.MULTILINE|re.DOTALL
     )
 
-    open(filename, 'w').write(preprocessed_text)
+    open(filename, 'w').write(preprocessed_text + extra_cdef)
 
 
 if __name__ == '__main__':
@@ -113,19 +113,28 @@ if __name__ == '__main__':
         i += 1
 
     # Define the source & header for nuklear with the options we want to use.
-    opts = ""
+    opts = """
+    #define NK_INCLUDE_DEFAULT_ALLOCATOR
+    """
     header = opts + open(nuklear_header_filename, 'r').read()
-    source = "#define NK_IMPLEMENTATION\n" + header
-    
+    source = """
+    #define NK_IMPLEMENTATION
+    """ + header
+    extra_cdef = """
+    extern "Python" {
+        float pynk_text_width_callback(nk_handle handle, float height, const char *text, int len);
+    }
+    """
+
     # Extract the 'cdef' text from the header file.  Since this could break
     # with changes to the header file, this is semi-automatic: it will only
     # happen if the existing nuklear.defs is deleted.
     if not os.path.isfile(nuklear_defs_filename):
         print "nuklear.defs doesn't exist. Generating it."
-        build_nuklear_defs(nuklear_defs_filename, header) 
+        build_nuklear_defs(nuklear_defs_filename, header, extra_cdef)
     else:
         print "nuklear.defs already exists. Using that."
-    
+
     # Now build the FFI wrapper.
     print "Building ffi wrapper..."
     defs = open(nuklear_defs_filename, 'r').read()
