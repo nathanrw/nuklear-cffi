@@ -4,6 +4,7 @@
 A demo of the nuklear-cffi binding.
 """
 
+import collections
 import pygame
 
 from _nuklear import ffi, lib
@@ -16,6 +17,45 @@ def pynk_text_width_callback(handle, height, text, text_length):
     width, height = pygame_font.size(python_text)
     return width
 
+
+class KeyMapping(object):
+    """ Maps a pygame key press to a nuklear key sequence. """
+
+    def __init__(self, pg, nk, pg_mod=pygame.KMOD_NONE):
+        """ Map (pg, pg_mod) -> nk, where pg_mod is an optional modifier that
+        defaults to KMOD_NONE.  pg can be a sequence in which case both pygame
+        keys are mapped to the same thing.  nk can be a sequence in which case
+        multiple nk keys are issued in response to the single pygame event. """
+        self.pgs = pg
+        if not isinstance(self.pgs, collections.Iterable):
+            self.pgs = [self.pgs]
+        self.nks = nk
+        if not isinstance(self.nks, collections.Iterable):
+            self.nks = [self.nks]
+        self.pg_mod = pg_mod
+
+
+class KeyMap(object):
+    """ Mapping between pygame and nuklear key constants. """
+
+    def __init__(self, *keymappings):
+        """ Initialise the key map. """
+        self.__keys = {}
+        for mapping in keymappings:
+            for pg in mapping.pgs:
+                self.__keys.setdefault(pg, {})
+                self.__keys[pg][mapping.pg_mod] = mapping
+            
+    def map_key(self, key, mod):
+        """ Return the nuklear key sequence corresponding to a pygame key+modifier. """
+        mapping = self.__keys.get(key, {}).get(mod, None)
+        if mapping is None:
+            mapping = self.__keys.get(key, {}).get(pygame.KMOD_NONE, None)
+        if mapping is not None:
+            return mapping.nks
+        return []
+
+
 if __name__ == '__main__':
 
     # Initialise pygame.
@@ -23,7 +63,7 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode((640, 480))
 
     # Create a font to use.
-    pygame_font = pygame.font.SysFont("Consolas", 12)
+    pygame_font = pygame.font.SysFont("Consolas", 24)
     pygame_font_handle = ffi.new_handle(pygame_font)
 
     # Expose the font to nuklear.
@@ -42,6 +82,32 @@ if __name__ == '__main__':
     op = EASY
     prop = ffi.new("int*", 0)
 
+    # Pygame to nuklear key mapping.
+    keymap = KeyMap(
+        KeyMapping([pygame.K_RSHIFT, pygame.K_LSHIFT], lib.NK_KEY_SHIFT),
+        KeyMapping(pygame.K_DELETE, lib.NK_KEY_DEL),
+        KeyMapping(pygame.K_RETURN, lib.NK_KEY_ENTER),
+        KeyMapping(pygame.K_TAB, lib.NK_KEY_TAB),
+        KeyMapping(pygame.K_BACKSPACE, lib.NK_KEY_BACKSPACE),
+        KeyMapping(pygame.K_HOME, [lib.NK_KEY_TEXT_START, lib.NK_KEY_SCROLL_START]),
+        KeyMapping(pygame.K_END, [lib.NK_KEY_TEXT_END, lib.NK_KEY_TEXT_START]),
+        KeyMapping(pygame.K_PAGEDOWN, lib.NK_KEY_SCROLL_DOWN),
+        KeyMapping(pygame.K_PAGEUP, lib.NK_KEY_SCROLL_UP),
+        KeyMapping(pygame.K_z, lib.NK_KEY_TEXT_UNDO, pygame.KMOD_CTRL),
+        KeyMapping(pygame.K_r, lib.NK_KEY_TEXT_REDO, pygame.KMOD_CTRL),
+        KeyMapping(pygame.K_c, lib.NK_KEY_COPY, pygame.KMOD_CTRL),
+        KeyMapping(pygame.K_v, lib.NK_KEY_PASTE, pygame.KMOD_CTRL),
+        KeyMapping(pygame.K_x, lib.NK_KEY_CUT, pygame.KMOD_CTRL),
+        KeyMapping(pygame.K_b, lib.NK_KEY_TEXT_LINE_START, pygame.KMOD_CTRL),
+        KeyMapping(pygame.K_e, lib.NK_KEY_TEXT_LINE_END, pygame.KMOD_CTRL),
+        KeyMapping(pygame.K_UP, lib.NK_KEY_UP),
+        KeyMapping(pygame.K_DOWN, lib.NK_KEY_DOWN), 
+        KeyMapping(pygame.K_LEFT, lib.NK_KEY_LEFT), 
+        KeyMapping(pygame.K_LEFT, lib.NK_KEY_TEXT_WORD_LEFT, pygame.KMOD_CTRL), 
+        KeyMapping(pygame.K_RIGHT, lib.NK_KEY_RIGHT), 
+        KeyMapping(pygame.K_RIGHT, lib.NK_KEY_TEXT_WORD_RIGHT, pygame.KMOD_CTRL)
+    )
+
     # Main loop.
     running = True
     while running:
@@ -51,6 +117,21 @@ if __name__ == '__main__':
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 running = False
+                continue
+            elif e.type == pygame.KEYDOWN or e.type == pygame.KEYUP:
+                down = e.type == pygame.KEYDOWN
+                for nk_key in keymap.map_key(e.key, e.mod):
+                    lib.nk_input_key(ctx, nk_key, down)
+            elif e.type == pygame.MOUSEBUTTONDOWN or e.type == pygame.MOUSEBUTTONUP:
+                down = e.type == pygame.MOUSEBUTTONDOWN
+                button = lib.NK_BUTTON_LEFT
+                if e.button == 1:
+                    button = lib.NK_BUTTON_LEFT
+                elif e.button == 3:
+                    button = lib.NK_BUTTON_RIGHT
+                lib.nk_input_button(ctx, button, e.pos[0], e.pos[1], down)
+            elif e.type == pygame.MOUSEMOTION:
+                lib.nk_input_motion(ctx, e.pos[0], e.pos[1])
         lib.nk_input_end(ctx)
 
         # Show the demo GUI.
