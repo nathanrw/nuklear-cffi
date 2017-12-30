@@ -6,8 +6,10 @@ A demo of the nuklear-cffi binding.
 
 import collections
 import pygame
+import unicodedata
 
 from _nuklear import ffi, lib
+
 
 @ffi.def_extern()
 def pynk_text_width_callback(handle, height, text, text_length):
@@ -119,9 +121,20 @@ if __name__ == '__main__':
                 running = False
                 continue
             elif e.type == pygame.KEYDOWN or e.type == pygame.KEYUP:
+                consumed = False
                 down = e.type == pygame.KEYDOWN
                 for nk_key in keymap.map_key(e.key, e.mod):
                     lib.nk_input_key(ctx, nk_key, down)
+                    consumed = True
+                if not consumed and down and len(e.unicode) == 1:
+                    # Note: should pass unicode directly, but need to
+                    # convert wchar_t (which is what cffi converts to)
+                    # to int or char[4]. wchar_t is 2 bytes on windows
+                    # for utf-16
+                    if unicodedata.category(e.unicode)[0] != "C":
+                        char = str(e.unicode)
+                        if len(char) == 1:
+                            lib.nk_input_char(ctx, str(e.unicode))
             elif e.type == pygame.MOUSEBUTTONDOWN or e.type == pygame.MOUSEBUTTONUP:
                 down = e.type == pygame.MOUSEBUTTONDOWN
                 button = lib.NK_BUTTON_LEFT
