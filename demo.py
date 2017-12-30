@@ -20,69 +20,46 @@ def pynk_text_width_callback(handle, height, text, text_length):
     return width
 
 
-class KeyMapping(object):
-    """ Maps a pygame key press to a nuklear key sequence. """
-
-    def __init__(self, pg, nk, pg_mod=pygame.KMOD_NONE):
-        """ Map (pg, pg_mod) -> nk, where pg_mod is an optional modifier that
-        defaults to KMOD_NONE.  pg can be a sequence in which case both pygame
-        keys are mapped to the same thing.  nk can be a sequence in which case
-        multiple nk keys are issued in response to the single pygame event. """
-        self.pgs = pg
-        if not isinstance(self.pgs, collections.Iterable):
-            self.pgs = [self.pgs]
-        self.nks = nk
-        if not isinstance(self.nks, collections.Iterable):
-            self.nks = [self.nks]
-        self.pg_mod = pg_mod
+def handle_pygame_event(ctx, e):
+    """ Map a pygame event to nuklear input. """
 
 
-class KeyMap(object):
-    """ Mapping between pygame and nuklear key constants. """
-
-    def __init__(self, *keymappings):
-        """ Initialise the key map. """
-        self.__keys = {}
-        for mapping in keymappings:
-            for pg in mapping.pgs:
-                self.__keys.setdefault(pg, {})
-                self.__keys[pg][mapping.pg_mod] = mapping
-            
-    def map_key(self, key, mod):
-        """ Return the nuklear key sequence corresponding to a pygame key+modifier. """
-        mapping = self.__keys.get(key, {}).get(mod, None)
-        if mapping is None:
-            mapping = self.__keys.get(key, {}).get(pygame.KMOD_NONE, None)
-        if mapping is not None:
-            return mapping.nks
-        return []
-
-
-if __name__ == '__main__':
-
-    # Initialise pygame.
-    pygame.init()
-    screen = pygame.display.set_mode((640, 480))
-
-    # Create a font to use.
-    pygame_font = pygame.font.SysFont("Consolas", 24)
-    pygame_font_handle = ffi.new_handle(pygame_font)
-
-    # Expose the font to nuklear.
-    nuklear_font = ffi.new("struct nk_user_font*")
-    nuklear_font.userdata.ptr = pygame_font_handle
-    nuklear_font.height = pygame_font.get_height()
-    nuklear_font.width = lib.pynk_text_width_callback
-
-    # Initialise the nuklear context.
-    ctx = ffi.new("struct nk_context*")
-    lib.nk_init_default(ctx, nuklear_font)
-
-    # Some state for the GUI.
-    EASY = 0
-    HARD = 1
-    op = EASY
-    prop = ffi.new("int*", 0)
+    class KeyMapping(object):
+        """ Maps a pygame key press to a nuklear key sequence. """
+    
+        def __init__(self, pg, nk, pg_mod=pygame.KMOD_NONE):
+            """ Map (pg, pg_mod) -> nk, where pg_mod is an optional modifier that
+            defaults to KMOD_NONE.  pg can be a sequence in which case both pygame
+            keys are mapped to the same thing.  nk can be a sequence in which case
+            multiple nk keys are issued in response to the single pygame event. """
+            self.pgs = pg
+            if not isinstance(self.pgs, collections.Iterable):
+                self.pgs = [self.pgs]
+            self.nks = nk
+            if not isinstance(self.nks, collections.Iterable):
+                self.nks = [self.nks]
+            self.pg_mod = pg_mod
+    
+    
+    class KeyMap(object):
+        """ Mapping between pygame and nuklear key constants. """
+    
+        def __init__(self, *keymappings):
+            """ Initialise the key map. """
+            self.__keys = {}
+            for mapping in keymappings:
+                for pg in mapping.pgs:
+                    self.__keys.setdefault(pg, {})
+                    self.__keys[pg][mapping.pg_mod] = mapping
+                
+        def map_key(self, key, mod):
+            """ Return the nuklear key sequence corresponding to a pygame key+modifier. """
+            mapping = self.__keys.get(key, {}).get(mod, None)
+            if mapping is None:
+                mapping = self.__keys.get(key, {}).get(pygame.KMOD_NONE, None)
+            if mapping is not None:
+                return mapping.nks
+            return []
 
     # Pygame to nuklear key mapping.
     keymap = KeyMap(
@@ -110,6 +87,183 @@ if __name__ == '__main__':
         KeyMapping(pygame.K_RIGHT, lib.NK_KEY_TEXT_WORD_RIGHT, pygame.KMOD_CTRL)
     )
 
+    if e.type == pygame.KEYDOWN or e.type == pygame.KEYUP:
+        consumed = False
+        down = e.type == pygame.KEYDOWN
+        for nk_key in keymap.map_key(e.key, e.mod):
+            lib.nk_input_key(ctx, nk_key, down)
+            consumed = True
+        if not consumed and down and len(e.unicode) == 1:
+            # Note: should pass unicode directly, but need to
+            # convert wchar_t (which is what cffi converts to)
+            # to int or char[4]. wchar_t is 2 bytes on windows
+            # for utf-16
+            if unicodedata.category(e.unicode)[0] != "C":
+                char = str(e.unicode)
+                if len(char) == 1:
+                    lib.nk_input_char(ctx, str(e.unicode))
+    elif e.type == pygame.MOUSEBUTTONDOWN or e.type == pygame.MOUSEBUTTONUP:
+        down = e.type == pygame.MOUSEBUTTONDOWN
+        button = lib.NK_BUTTON_LEFT
+        if e.button == 1:
+            button = lib.NK_BUTTON_LEFT
+        elif e.button == 3:
+            button = lib.NK_BUTTON_RIGHT
+        lib.nk_input_button(ctx, button, e.pos[0], e.pos[1], down)
+    elif e.type == pygame.MOUSEMOTION:
+        lib.nk_input_motion(ctx, e.pos[0], e.pos[1])
+
+
+def render_to_pygame_surface(ctx, screen):
+    """ 
+    Render the nuklear context to a pygame surface.
+
+    'ctx' must be an initialised nuklear context, where userdata pointers
+    contain pygame objects.
+
+    'screen' is a pygame surface.  This function will set the clip region and
+    result in the clip region being set to None.
+    """
+
+    nuklear_command = lib.nk__begin(ctx)
+    while nuklear_command:
+        if nuklear_command.type == lib.NK_COMMAND_NOP:
+            pass
+        elif nuklear_command.type == lib.NK_COMMAND_SCISSOR:
+            c = ffi.cast("struct nk_command_scissor*", nuklear_command)
+            rect = pygame.Rect(c.x, c.y, c.w, c.h)
+            screen.set_clip(rect)
+        elif nuklear_command.type == lib.NK_COMMAND_LINE:
+            c = ffi.cast("struct nk_command_line*", nuklear_command)
+            pygame.draw.line(screen, 
+                             (c.color.r, c.color.g, c.color.b), 
+                             (c.begin.x, c.begin.y),
+                             (c.end.x, c.end.y),
+                             c.line_thickness)
+        elif nuklear_command.type == lib.NK_COMMAND_RECT:
+            c = ffi.cast("struct nk_command_rect*", nuklear_command)
+            rect = pygame.Rect(c.x, c.y, c.w, c.h)
+            colour = (c.color.r, c.color.g, c.color.b)
+            # c.rounding - unsupported.
+            pygame.draw.rect(screen, colour, rect, c.line_thickness)
+        elif nuklear_command.type == lib.NK_COMMAND_RECT_FILLED:
+            c = ffi.cast("struct nk_command_rect_filled*", nuklear_command)
+            rect = pygame.Rect(c.x, c.y, c.w, c.h)
+            colour = (c.color.r, c.color.g, c.color.b)
+            # c.rounding - unsupported.
+            pygame.draw.rect(screen, colour, rect, 0)
+        elif nuklear_command.type == lib.NK_COMMAND_CIRCLE:
+            c = ffi.cast("struct nk_command_circle*", nuklear_command)
+            rect = pygame.Rect(c.x, c.y, c.w, c.h)
+            colour = (c.color.r, c.color.g, c.color.b)
+            pygame.draw.ellipse(screen, colour, rect, c.line_thickness)
+        elif nuklear_command.type == lib.NK_COMMAND_CIRCLE_FILLED:
+            c = ffi.cast("struct nk_command_circle_filled*", nuklear_command)
+            rect = pygame.Rect(c.x, c.y, c.w, c.h)
+            colour = (c.color.r, c.color.g, c.color.b)
+            pygame.draw.ellipse(screen, colour, rect, 0)
+        elif nuklear_command.type == lib.NK_COMMAND_TRIANGLE:
+            c = ffi.cast("struct nk_command_triangle*", nuklear_command)
+            points = [(c.a.x, c.a.y), (c.b.x, c.b.y), (c.c.x, c.c.y)]
+            colour = (c.color.r, c.color.g, c.color.b)
+            pygame.draw.polygon(screen, colour, points, c.line_thickness)
+        elif nuklear_command.type == lib.NK_COMMAND_TRIANGLE_FILLED:
+            c = ffi.cast("struct nk_command_triangle_filled*", nuklear_command)
+            points = [(c.a.x, c.a.y), (c.b.x, c.b.y), (c.c.x, c.c.y)]
+            colour = (c.color.r, c.color.g, c.color.b)
+            pygame.draw.polygon(screen, colour, points, 0)
+        elif nuklear_command.type == lib.NK_COMMAND_POLYGON:
+            c = ffi.cast("struct nk_command_polygon*", nuklear_command)
+            unpacked = ffi.unpack(c.points, c.point_count)
+            points = [(p.x, p.y) for p in unpacked]
+            colour = (c.color.r, c.color.g, c.color.b)
+            pygame.draw.polygon(screen, colour, points, c.line_thickness)
+        elif nuklear_command.type == lib.NK_COMMAND_POLYGON_FILLED:
+            c = ffi.cast("struct nk_command_polygon_filled*", nuklear_command)
+            unpacked = ffi.unpack(c.points, c.point_count)
+            points = [(p.x, p.y) for p in unpacked]
+            colour = (c.color.r, c.color.g, c.color.b)
+            pygame.draw.polygon(screen, colour, points, 0)
+        elif nuklear_command.type == lib.NK_COMMAND_POLYLINE:
+            c = ffi.cast("struct nk_command_polyline*", nuklear_command)
+            unpacked = ffi.unpack(c.points, c.point_count)
+            points = [(p.x, p.y) for p in unpacked]
+            colour = (c.color.r, c.color.g, c.color.b)
+            pygame.draw.polygon(screen, colour, points, c.line_thickness)
+        elif nuklear_command.type == lib.NK_COMMAND_TEXT:
+            c = ffi.cast("struct nk_command_text*", nuklear_command)
+            pygame_font = ffi.from_handle(c.font.userdata.ptr)
+            text = ffi.string(c.string, c.length)
+            fg_colour = (c.foreground.r, c.foreground.g, c.foreground.b)
+            bg_colour = (c.background.r, c.background.g, c.background.b)
+            rect = pygame.Rect(c.x, c.y, c.w, c.h)
+            rendered = pygame_font.render(text, True, fg_colour, bg_colour)
+            screen.blit(rendered, rect.topleft)
+        elif nuklear_command.type == lib.NK_COMMAND_CURVE:
+            pass
+        elif nuklear_command.type == lib.NK_COMMAND_RECT_MULTI_COLOR:
+            pass
+        elif nuklear_command.type == lib.NK_COMMAND_IMAGE:
+            pass
+        elif nuklear_command.type == lib.NK_COMMAND_ARC:
+            pass
+        elif nuklear_command.type == lib.NK_COMMAND_ARC_FILLED:
+            pass
+        else:
+            raise Exception("Unknown nuklear command type.")
+        nuklear_command = lib.nk__next(ctx, nuklear_command)
+
+    # Reset the clipping.
+    screen.set_clip(None)
+
+
+def nk_init_pygame(font):
+    """ Initialise nuklear for use with Pygame. """
+
+    class PyNk(object):
+        pass
+
+    ret = PyNk()
+
+    ret.pygame_font = font
+    ret.pygame_font_handle = ffi.new_handle(ret.pygame_font)
+
+    ret.nuklear_font = ffi.new("struct nk_user_font*")
+    ret.nuklear_font.userdata.ptr = pygame_font_handle
+    ret.nuklear_font.height = pygame_font.get_height()
+    ret.nuklear_font.width = lib.pynk_text_width_callback
+
+    ret.ctx = ffi.new("struct nk_context*")
+    lib.nk_init_default(ret.ctx, ret.nuklear_font)
+
+
+if __name__ == '__main__':
+
+    # Initialise pygame.
+    pygame.init()
+    screen = pygame.display.set_mode((640, 480))
+
+    # Create a font to use.
+    pygame_font = pygame.font.SysFont("Consolas", 24)
+    pygame_font_handle = ffi.new_handle(pygame_font)
+
+    # Expose the font to nuklear.
+    nuklear_font = ffi.new("struct nk_user_font*")
+    nuklear_font.userdata.ptr = pygame_font_handle
+    nuklear_font.height = pygame_font.get_height()
+    nuklear_font.width = lib.pynk_text_width_callback
+
+    # Initialise the nuklear context.
+    ctx = ffi.new("struct nk_context*")
+    lib.nk_init_default(ctx, nuklear_font)
+
+    # Some state for the GUI.
+    EASY = 0
+    HARD = 1
+    op = EASY
+    prop = ffi.new("int*", 0)
+    winflags = 0
+
     # Main loop.
     running = True
     while running:
@@ -119,142 +273,39 @@ if __name__ == '__main__':
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 running = False
-                continue
-            elif e.type == pygame.KEYDOWN or e.type == pygame.KEYUP:
-                consumed = False
-                down = e.type == pygame.KEYDOWN
-                for nk_key in keymap.map_key(e.key, e.mod):
-                    lib.nk_input_key(ctx, nk_key, down)
-                    consumed = True
-                if not consumed and down and len(e.unicode) == 1:
-                    # Note: should pass unicode directly, but need to
-                    # convert wchar_t (which is what cffi converts to)
-                    # to int or char[4]. wchar_t is 2 bytes on windows
-                    # for utf-16
-                    if unicodedata.category(e.unicode)[0] != "C":
-                        char = str(e.unicode)
-                        if len(char) == 1:
-                            lib.nk_input_char(ctx, str(e.unicode))
-            elif e.type == pygame.MOUSEBUTTONDOWN or e.type == pygame.MOUSEBUTTONUP:
-                down = e.type == pygame.MOUSEBUTTONDOWN
-                button = lib.NK_BUTTON_LEFT
-                if e.button == 1:
-                    button = lib.NK_BUTTON_LEFT
-                elif e.button == 3:
-                    button = lib.NK_BUTTON_RIGHT
-                lib.nk_input_button(ctx, button, e.pos[0], e.pos[1], down)
-            elif e.type == pygame.MOUSEMOTION:
-                lib.nk_input_motion(ctx, e.pos[0], e.pos[1])
+            else:
+                handle_pygame_event(ctx, e)
         lib.nk_input_end(ctx)
 
         # Show the demo GUI.
-        if lib.nk_begin(ctx, "Demo", lib.nk_rect(50, 50, 200, 200),
-                        lib.NK_WINDOW_BORDER|lib.NK_WINDOW_MOVABLE|lib.NK_WINDOW_SCALABLE|\
-                        lib.NK_WINDOW_CLOSABLE|lib.NK_WINDOW_MINIMIZABLE|lib.NK_WINDOW_TITLE):
+        flags = [ (lib.NK_WINDOW_BORDER, "Border"),
+                  (lib.NK_WINDOW_MOVABLE, "Movable"),
+                  (lib.NK_WINDOW_SCALABLE, "Scalable"),
+                  (lib.NK_WINDOW_CLOSABLE, "Scrollable"),
+                  (lib.NK_WINDOW_MINIMIZABLE, "Minimizable"),
+                  (lib.NK_WINDOW_TITLE, "Title") ]
+        if lib.nk_begin(ctx, "Demo", lib.nk_rect(50, 50, 200, 200), winflags):
             lib.nk_layout_row_static(ctx, 30, 80, 1)
-            if lib.nk_button_label(ctx, "button"):
-                print "button pressed"
+            if lib.nk_button_label(ctx, "quit"):
+                running = False
             lib.nk_layout_row_dynamic(ctx, 30, 2)
-            if lib.nk_option_label(ctx, "easy", op == EASY): op = EASY
-            if lib.nk_option_label(ctx, "hard", op == HARD): op = HARD
+            if lib.nk_option_label(ctx, "easy", op == EASY): 
+                op = EASY
+            if lib.nk_option_label(ctx, "hard", op == HARD): 
+                op = HARD
             lib.nk_layout_row_dynamic(ctx, 22, 1)
             lib.nk_property_int(ctx, "Compression:", 0, prop, 100, 10, 1)
+            for flag in flags:
+                lib.nk_layout_row_dynamic(ctx, 22, 1)
+                if lib.nk_check_label(ctx, flag[1], winflags & flag[0]): 
+                    winflags |= flag[0]
+                else:
+                    winflags &= ~flag[0]
         lib.nk_end(ctx)
 
-        # Clear the screen.
+        # Draw
         screen.fill((0, 0, 0))
-
-        # Do nuklear drawing.
-        nuklear_command = lib.nk__begin(ctx)
-        while nuklear_command:
-            if nuklear_command.type == lib.NK_COMMAND_NOP:
-                pass
-            elif nuklear_command.type == lib.NK_COMMAND_SCISSOR:
-                c = ffi.cast("struct nk_command_scissor*", nuklear_command)
-                rect = pygame.Rect(c.x, c.y, c.w, c.h)
-                screen.set_clip(rect)
-            elif nuklear_command.type == lib.NK_COMMAND_LINE:
-                c = ffi.cast("struct nk_command_line*", nuklear_command)
-                pygame.draw.line(screen, 
-                                 (c.color.r, c.color.g, c.color.b), 
-                                 (c.begin.x, c.begin.y),
-                                 (c.end.x, c.end.y),
-                                 c.line_thickness)
-            elif nuklear_command.type == lib.NK_COMMAND_RECT:
-                c = ffi.cast("struct nk_command_rect*", nuklear_command)
-                rect = pygame.Rect(c.x, c.y, c.w, c.h)
-                colour = (c.color.r, c.color.g, c.color.b)
-                # c.rounding - unsupported.
-                pygame.draw.rect(screen, colour, rect, c.line_thickness)
-            elif nuklear_command.type == lib.NK_COMMAND_RECT_FILLED:
-                c = ffi.cast("struct nk_command_rect_filled*", nuklear_command)
-                rect = pygame.Rect(c.x, c.y, c.w, c.h)
-                colour = (c.color.r, c.color.g, c.color.b)
-                # c.rounding - unsupported.
-                pygame.draw.rect(screen, colour, rect, 0)
-            elif nuklear_command.type == lib.NK_COMMAND_CIRCLE:
-                c = ffi.cast("struct nk_command_circle*", nuklear_command)
-                rect = pygame.Rect(c.x, c.y, c.w, c.h)
-                colour = (c.color.r, c.color.g, c.color.b)
-                pygame.draw.ellipse(screen, colour, rect, c.line_thickness)
-            elif nuklear_command.type == lib.NK_COMMAND_CIRCLE_FILLED:
-                c = ffi.cast("struct nk_command_circle_filled*", nuklear_command)
-                rect = pygame.Rect(c.x, c.y, c.w, c.h)
-                colour = (c.color.r, c.color.g, c.color.b)
-                pygame.draw.ellipse(screen, colour, rect, 0)
-            elif nuklear_command.type == lib.NK_COMMAND_TRIANGLE:
-                c = ffi.cast("struct nk_command_triangle*", nuklear_command)
-                points = [(c.a.x, c.a.y), (c.b.x, c.b.y), (c.c.x, c.c.y)]
-                colour = (c.color.r, c.color.g, c.color.b)
-                pygame.draw.polygon(screen, colour, points, c.line_thickness)
-            elif nuklear_command.type == lib.NK_COMMAND_TRIANGLE_FILLED:
-                c = ffi.cast("struct nk_command_triangle_filled*", nuklear_command)
-                points = [(c.a.x, c.a.y), (c.b.x, c.b.y), (c.c.x, c.c.y)]
-                colour = (c.color.r, c.color.g, c.color.b)
-                pygame.draw.polygon(screen, colour, points, 0)
-            elif nuklear_command.type == lib.NK_COMMAND_POLYGON:
-                c = ffi.cast("struct nk_command_polygon*", nuklear_command)
-                unpacked = ffi.unpack(c.points, c.point_count)
-                points = [(p.x, p.y) for p in unpacked]
-                colour = (c.color.r, c.color.g, c.color.b)
-                pygame.draw.polygon(screen, colour, points, c.line_thickness)
-            elif nuklear_command.type == lib.NK_COMMAND_POLYGON_FILLED:
-                c = ffi.cast("struct nk_command_polygon_filled*", nuklear_command)
-                unpacked = ffi.unpack(c.points, c.point_count)
-                points = [(p.x, p.y) for p in unpacked]
-                colour = (c.color.r, c.color.g, c.color.b)
-                pygame.draw.polygon(screen, colour, points, 0)
-            elif nuklear_command.type == lib.NK_COMMAND_POLYLINE:
-                c = ffi.cast("struct nk_command_polyline*", nuklear_command)
-                unpacked = ffi.unpack(c.points, c.point_count)
-                points = [(p.x, p.y) for p in unpacked]
-                colour = (c.color.r, c.color.g, c.color.b)
-                pygame.draw.polygon(screen, colour, points, c.line_thickness)
-            elif nuklear_command.type == lib.NK_COMMAND_TEXT:
-                c = ffi.cast("struct nk_command_text*", nuklear_command)
-                pygame_font = ffi.from_handle(c.font.userdata.ptr)
-                text = ffi.string(c.string, c.length)
-                fg_colour = (c.foreground.r, c.foreground.g, c.foreground.b)
-                bg_colour = (c.background.r, c.background.g, c.background.b)
-                rect = pygame.Rect(c.x, c.y, c.w, c.h)
-                rendered = pygame_font.render(text, True, fg_colour, bg_colour)
-                screen.blit(rendered, rect.topleft)
-            elif nuklear_command.type == lib.NK_COMMAND_CURVE:
-                pass
-            elif nuklear_command.type == lib.NK_COMMAND_RECT_MULTI_COLOR:
-                pass
-            elif nuklear_command.type == lib.NK_COMMAND_IMAGE:
-                pass
-            elif nuklear_command.type == lib.NK_COMMAND_ARC:
-                pass
-            elif nuklear_command.type == lib.NK_COMMAND_ARC_FILLED:
-                pass
-            else:
-                raise Exception("Unknown nuklear command type.")
-            nuklear_command = lib.nk__next(ctx, nuklear_command)
-
-        # Update the display.
-        screen.set_clip(None)
+        render_to_pygame_surface(ctx, screen)
         pygame.display.update()
 
         # Clear the context for the next pass.
