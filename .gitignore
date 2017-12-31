@@ -3,3 +3,4 @@ _nuklear.o
 _nuklear.so
 preprocessor_input.h
 nuklear.defs
+*.pyc
