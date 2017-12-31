@@ -88,6 +88,13 @@ def build_nuklear_defs(filename, header, extra_cdef):
         flags=re.MULTILINE|re.DOTALL
     )
 
+    print "Removing duplicate 'nk_draw_list_clear' declaration..."
+    preprocessed_text = re.sub(
+        "extern void nk_draw_list_clear\\(struct nk_draw_list \\*list\\);",
+        "",
+        preprocessed_text
+    )
+
     open(filename, 'w').write(preprocessed_text + extra_cdef)
 
 
@@ -115,6 +122,8 @@ if __name__ == '__main__':
     # Define the source & header for nuklear with the options we want to use.
     opts = """
     #define NK_INCLUDE_DEFAULT_ALLOCATOR
+    #define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+    #define NK_INCLUDE_FONT_BAKING
     """
     header = opts + open(nuklear_header_filename, 'r').read()
     source = """
@@ -126,14 +135,8 @@ if __name__ == '__main__':
     }
     """
 
-    # Extract the 'cdef' text from the header file.  Since this could break
-    # with changes to the header file, this is semi-automatic: it will only
-    # happen if the existing nuklear.defs is deleted.
-    if not os.path.isfile(nuklear_defs_filename):
-        print "nuklear.defs doesn't exist. Generating it."
-        build_nuklear_defs(nuklear_defs_filename, header, extra_cdef)
-    else:
-        print "nuklear.defs already exists. Using that."
+    # Extract the 'cdef' text from the header file.
+    build_nuklear_defs(nuklear_defs_filename, header, extra_cdef)
 
     # Now build the FFI wrapper.
     print "Building ffi wrapper..."
