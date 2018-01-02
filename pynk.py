@@ -13,7 +13,7 @@ from _nuklear import ffi, lib
 def pynk_text_width_callback(handle, height, text, text_length):
     """ Text measurement callback. """
     pygame_font = ffi.from_handle(handle.ptr)
-    python_text = ffi.string(text)
+    python_text = ffi.string(text, text_length)
     width, height = pygame_font.size(python_text)
     return width
 
