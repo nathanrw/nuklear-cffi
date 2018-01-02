@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     # Initialise pygame.
     pygame.init()
-    screen = pygame.display.set_mode((640, 480))
+    screen = pygame.display.set_mode((800, 600))
 
     # Some state for the GUI.
     EASY = 0
@@ -33,7 +33,7 @@ if __name__ == '__main__':
               (lib.NK_WINDOW_TITLE, "Title") ]
 
     # Initialise nuklear
-    font = pygame.font.SysFont("Consolas", 24)
+    font = pygame.font.SysFont("Consolas", 14)
     with pynk.NkPygame(font) as nkpy:
         while running:
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
             nkpy.handle_events(events)
 
             # Show the demo GUI.
-            if lib.nk_begin(nkpy.ctx, "Demo", lib.nk_rect(50, 50, 200, 200), winflags):
+            if lib.nk_begin(nkpy.ctx, "Demo", lib.nk_rect(50, 50, 300, 300), winflags):
                 lib.nk_layout_row_static(nkpy.ctx, 30, 80, 1)
                 if lib.nk_button_label(nkpy.ctx, "quit"):
                     running = False
@@ -65,6 +65,9 @@ if __name__ == '__main__':
                     else:
                         winflags &= ~flag[0]
             lib.nk_end(nkpy.ctx)
+
+            # Show the built-in overview GUI.
+            lib.pynk_overview(nkpy.ctx)
 
             # Draw
             screen.fill((0, 0, 0))

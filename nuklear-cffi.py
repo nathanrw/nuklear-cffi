@@ -103,6 +103,7 @@ if __name__ == '__main__':
     # Names of the files we interact with.
     nuklear_header_filename = "nuklear/nuklear.h"
     nuklear_defs_filename = "nuklear.defs"
+    nuklear_overview_filename = "nuklear/demo/overview.c"
 
     # Parse command line arguments.
     i = 1
@@ -124,14 +125,29 @@ if __name__ == '__main__':
     #define NK_INCLUDE_DEFAULT_ALLOCATOR
     #define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
     #define NK_INCLUDE_FONT_BAKING
+    #define NK_INCLUDE_STANDARD_VARARGS
     """
     header = opts + open(nuklear_header_filename, 'r').read()
     source = """
     #define NK_IMPLEMENTATION
     """ + header
     extra_cdef = """
+    void pynk_overview(struct nk_context *ctx);
     extern "Python" {
         float pynk_text_width_callback(nk_handle handle, float height, const char *text, int len);
+    }
+    """
+    overview_source = open(nuklear_overview_filename, 'r').read()
+    source += """
+    #define UNUSED(a) (void)a
+    #define MIN(a,b) ((a) < (b) ? (a) : (b))
+    #define MAX(a,b) ((a) < (b) ? (b) : (a))
+    #define LEN(a) (sizeof(a)/sizeof(a)[0])
+    """
+    source += overview_source
+    source += """
+    void pynk_overview(struct nk_context *ctx) {
+        overview(ctx);
     }
     """
 
