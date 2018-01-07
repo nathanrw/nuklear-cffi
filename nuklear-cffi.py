@@ -15,21 +15,34 @@ Usage: ./nuklear-cffi.py [--header <filename>]
 
 import cffi
 import re
-import subprocess
 import os
 import os.path
 import sys
+import platform
+import StringIO
+from pcpp.preprocessor import Preprocessor
 
 
 def run_c_preprocessor(header_contents):
     """
-    Run a C preprocessor on the given header file contents.  This
-    implementation currently only supports 'cpp' but could be extended 
-    in future.
+    Run a C preprocessor on the given header file contents.
     """
-    filename = "preprocessor_input.h"
-    open(filename, 'w').write(header_contents)
-    return subprocess.check_output(["cpp", "-P", filename])
+    cpp = Preprocessor()
+    if platform.system() == "Windows":
+        cpp.define("_MSC_VER")
+        if platform.architecture()[0] == "64bit":
+            cpp.define("_WIN64")
+        else:
+            cpp.define("WIN32")
+            cpp.define("_WIN32")
+    else:
+        cpp.define("__GNUC__")
+        if platform.architecture()[0] == "64bit":
+            cpp.define("__x86_64__")
+    cpp.parse(header_contents)
+    output = StringIO.StringIO()
+    cpp.write(output)
+    return output.getvalue()
 
 
 def build_nuklear_defs(filename, header, extra_cdef):
