@@ -21,5 +21,6 @@ Dependencies
  - cffi, a Python library.
  - pcpp, a C preprocessor written in Python.
 
-Note that at present the `pcpp` in pypi won't cut it.  You will have to
-install the one in my github fork.
+Note that at present the `pcpp` in pypi won't cut it, because in order to
+preprocess nuklear.h we rely on a fix that has not (as of writing) yet been
+integrated.  You will have to install the one in my github fork.

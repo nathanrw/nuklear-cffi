@@ -1,0 +1,3 @@
+include README.rst
+include nuklear/nuklear.h
+include nuklear/demo/overview.c

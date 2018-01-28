@@ -1,15 +1,8 @@
-#!/usr/bin/env python2
-
-
 """
-nuklear-cffi.py
-
 Semi-automatically generates a Python binding for the 'nuklear' GUI library,
 which is a simple header-only C library with no dependencies.  The binding
 makes use of the 'cffi' python package; to use it see the documentation for
 'cffi'.
-
-Usage: ./nuklear-cffi.py [--header <filename>]
 """
 
 
@@ -17,7 +10,6 @@ import cffi
 import re
 import os
 import os.path
-import sys
 import platform
 import StringIO
 from pcpp.preprocessor import Preprocessor
@@ -45,7 +37,7 @@ def run_c_preprocessor(header_contents):
     return output.getvalue()
 
 
-def build_nuklear_defs(filename, header, extra_cdef):
+def build_nuklear_defs(header, extra_cdef):
     """
     Preprocess the header file and extract declarations, writing the
     declarations to the given output filename.
@@ -108,30 +100,15 @@ def build_nuklear_defs(filename, header, extra_cdef):
         preprocessed_text
     )
 
-    open(filename, 'w').write(preprocessed_text + extra_cdef)
+    return preprocessed_text + extra_cdef
 
 
-if __name__ == '__main__':
+def make_ffibuilder():
+    """ Make the ffibuilder object by parsing the nuklear header. """
 
     # Names of the files we interact with.
     nuklear_header_filename = "nuklear/nuklear.h"
-    nuklear_defs_filename = "nuklear.defs"
     nuklear_overview_filename = "nuklear/demo/overview.c"
-
-    # Parse command line arguments.
-    i = 1
-    while i < len(sys.argv):
-        arg = sys.argv[i]
-        if arg == "-h" or arg == "--help":
-            print __doc__
-            sys.exit(0)
-        elif arg == "--header":
-            if i+1 == len(sys.argv):
-                print "--header <filename>"
-                sys.exit(1)
-            i += 1
-            nuklear_header_filename = sys.argv[i]
-        i += 1
 
     # Define the source & header for nuklear with the options we want to use.
     opts = """
@@ -165,12 +142,18 @@ if __name__ == '__main__':
     """
 
     # Extract the 'cdef' text from the header file.
-    build_nuklear_defs(nuklear_defs_filename, header, extra_cdef)
+    defs = build_nuklear_defs(header, extra_cdef)
 
     # Now build the FFI wrapper.
     print "Building ffi wrapper..."
-    defs = open(nuklear_defs_filename, 'r').read()
     ffibuilder = cffi.FFI()
     ffibuilder.cdef(defs)
     ffibuilder.set_source("_nuklear", source, libraries=[])
+    return ffibuilder
+
+
+ffibuilder = make_ffibuilder()
+
+
+if __name__ == '__main__':
     ffibuilder.compile(verbose=True)

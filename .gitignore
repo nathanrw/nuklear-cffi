@@ -3,3 +3,7 @@ _nuklear.o
 _nuklear.so
 nuklear.defs
 *.pyc
+/.eggs/*
+/build/*
+/pynk.egg-info/*
+/dist/*

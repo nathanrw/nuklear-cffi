@@ -8,9 +8,8 @@ import collections
 import pygame
 import unicodedata
 
-from _nuklear import ffi, lib
-
 import pynk
+import pynk.pygame
 
 if __name__ == '__main__':
 
@@ -22,19 +21,19 @@ if __name__ == '__main__':
     EASY = 0
     HARD = 1
     op = EASY
-    prop = ffi.new("int*", 0)
+    prop = pynk.ffi.new("int*", 0)
     winflags = 0
     running = True
-    flags = [ (lib.NK_WINDOW_BORDER, "Border"),
-              (lib.NK_WINDOW_MOVABLE, "Movable"),
-              (lib.NK_WINDOW_SCALABLE, "Scalable"),
-              (lib.NK_WINDOW_CLOSABLE, "Scrollable"),
-              (lib.NK_WINDOW_MINIMIZABLE, "Minimizable"),
-              (lib.NK_WINDOW_TITLE, "Title") ]
+    flags = [ (pynk.lib.NK_WINDOW_BORDER, "Border"),
+              (pynk.lib.NK_WINDOW_MOVABLE, "Movable"),
+              (pynk.lib.NK_WINDOW_SCALABLE, "Scalable"),
+              (pynk.lib.NK_WINDOW_CLOSABLE, "Scrollable"),
+              (pynk.lib.NK_WINDOW_MINIMIZABLE, "Minimizable"),
+              (pynk.lib.NK_WINDOW_TITLE, "Title") ]
 
     # Initialise nuklear
     font = pygame.font.SysFont("Consolas", 14)
-    with pynk.NkPygame(font) as nkpy:
+    with pynk.pygame.NkPygame(font) as nkpy:
         while running:
 
             # Handle input.
@@ -47,27 +46,27 @@ if __name__ == '__main__':
             nkpy.handle_events(events)
 
             # Show the demo GUI.
-            if lib.nk_begin(nkpy.ctx, "Demo", lib.nk_rect(50, 50, 300, 300), winflags):
-                lib.nk_layout_row_static(nkpy.ctx, 30, 80, 1)
-                if lib.nk_button_label(nkpy.ctx, "quit"):
+            if pynk.lib.nk_begin(nkpy.ctx, "Demo", pynk.lib.nk_rect(50, 50, 300, 300), winflags):
+                pynk.lib.nk_layout_row_static(nkpy.ctx, 30, 80, 1)
+                if pynk.lib.nk_button_label(nkpy.ctx, "quit"):
                     running = False
-                lib.nk_layout_row_dynamic(nkpy.ctx, 30, 2)
-                if lib.nk_option_label(nkpy.ctx, "easy", op == EASY): 
+                pynk.lib.nk_layout_row_dynamic(nkpy.ctx, 30, 2)
+                if pynk.lib.nk_option_label(nkpy.ctx, "easy", op == EASY): 
                     op = EASY
-                if lib.nk_option_label(nkpy.ctx, "hard", op == HARD): 
+                if pynk.lib.nk_option_label(nkpy.ctx, "hard", op == HARD): 
                     op = HARD
-                lib.nk_layout_row_dynamic(nkpy.ctx, 22, 1)
-                lib.nk_property_int(nkpy.ctx, "Compression:", 0, prop, 100, 10, 1)
+                pynk.lib.nk_layout_row_dynamic(nkpy.ctx, 22, 1)
+                pynk.lib.nk_property_int(nkpy.ctx, "Compression:", 0, prop, 100, 10, 1)
                 for flag in flags:
-                    lib.nk_layout_row_dynamic(nkpy.ctx, 22, 1)
-                    if lib.nk_check_label(nkpy.ctx, flag[1], winflags & flag[0]): 
+                    pynk.lib.nk_layout_row_dynamic(nkpy.ctx, 22, 1)
+                    if pynk.lib.nk_check_label(nkpy.ctx, flag[1], winflags & flag[0]): 
                         winflags |= flag[0]
                     else:
                         winflags &= ~flag[0]
-            lib.nk_end(nkpy.ctx)
+            pynk.lib.nk_end(nkpy.ctx)
 
             # Show the built-in overview GUI.
-            lib.pynk_overview(nkpy.ctx)
+            pynk.lib.pynk_overview(nkpy.ctx)
 
             # Draw
             screen.fill((0, 0, 0))
@@ -75,7 +74,7 @@ if __name__ == '__main__':
             pygame.display.update()
 
             # Clear the context for the next pass.
-            lib.nk_clear(nkpy.ctx)
+            pynk.lib.nk_clear(nkpy.ctx)
 
     # Shutdown.
     pygame.quit()
