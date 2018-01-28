@@ -103,7 +103,7 @@ def build_nuklear_defs(header, extra_cdef):
     return preprocessed_text + extra_cdef
 
 
-def make_ffibuilder():
+def maker():
     """ Make the ffibuilder object by parsing the nuklear header. """
 
     # Names of the files we interact with.
@@ -144,16 +144,14 @@ def make_ffibuilder():
     # Extract the 'cdef' text from the header file.
     defs = build_nuklear_defs(header, extra_cdef)
 
-    # Now build the FFI wrapper.
-    print "Building ffi wrapper..."
+    # Now create the FFI builder.
+    print "Creating ffi builder..."
     ffibuilder = cffi.FFI()
     ffibuilder.cdef(defs)
     ffibuilder.set_source("_nuklear", source, libraries=[])
     return ffibuilder
 
 
-ffibuilder = make_ffibuilder()
-
-
 if __name__ == '__main__':
+    ffibuilder = maker()
     ffibuilder.compile(verbose=True)
