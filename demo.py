@@ -9,7 +9,7 @@ import pygame
 import unicodedata
 
 import pynk
-import pynk.pygame
+import pynk.nkpygame
 
 if __name__ == '__main__':
 
@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     # Initialise nuklear
     font = pygame.font.SysFont("Consolas", 14)
-    with pynk.pygame.NkPygame(font) as nkpy:
+    with pynk.nkpygame.NkPygame(font) as nkpy:
         while running:
 
             # Handle input.
