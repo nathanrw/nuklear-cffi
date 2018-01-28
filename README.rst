@@ -15,6 +15,19 @@ However, the process of generating the Python binding requires a C
 compiler.  On Linux this is fine, but on Windows this can't be taken for
 granted.  It should be possible to distribute binaries however...
 
+Usage
+-----
+
+See `demo.py`.
+
+Status
+------
+
+Note that this is a *work in progress.*  While the limited functionality tested
+in demo.py appears to work, other areas may be broken or missing.  For instance
+functionality exposed via or reliant on macros is currently lost in the
+preprocessing step.  Additionally, packaging is not yet correct.
+
 Dependencies
 ------------
 
