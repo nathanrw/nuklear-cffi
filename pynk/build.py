@@ -22,6 +22,15 @@ def run_c_preprocessor(header_contents):
     cpp = Preprocessor()
     if platform.system() == "Windows":
         cpp.define("_MSC_VER")
+		
+		# NOTE: the cffi 'cdef' parser doesn't appear to understand
+		# the windows '__int32'.  So give it a definition.
+		#   - Not entirely sure what the ramifications of this are,
+		#     but it now compiles and runs on Windows...
+		#   - A better solution here would probably be to define 
+		#     NK_INT32 ourselves as int32_t.
+        cpp.define ("__int32 int")
+		
         if platform.architecture()[0] == "64bit":
             cpp.define("_WIN64")
         else:
