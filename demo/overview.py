@@ -841,41 +841,60 @@ class Overview(object):
                         pynk.lib.nk_chart_end(ctx);
                         pynk.lib.nk_combo_end(ctx);
 
+                    #static int time_selected = 0;
+                    #static int date_selected = 0;
+                    #static struct tm sel_time;
+                    #static struct tm sel_date;
+                    #if (!time_selected || !date_selected) {
+                    #    /* keep time and date updated if nothing is selected */
+                    #    time_t cur_time = time(0);
+                    #    struct tm *n = localtime(&cur_time);
+                    #    if (!time_selected)
+                    #        memcpy(&sel_time, n, sizeof(struct tm));
+                    #    if (!date_selected)
+                    #        memcpy(&sel_date, n, sizeof(struct tm));
+                    #}
+                    self.declare("time_selected", False)
+                    self.declare("date_selected", False)
+                    self.declare("sel_time", None)
+                    self.declare("sel_date", None)
+                    cur_time = datetime.datetime.now()
+                    if not self.time_selected:
+                        self.sel_time = cur_time
+                    if not self.date_selected:
+                        self.sel_date = cur_time
+                    #
+                    #/* time combobox */
+                    #sprintf(buffer, "%02d:%02d:%02d", sel_time.tm_hour, sel_time.tm_min, sel_time.tm_sec);
+                    sel_time_str = self.sel_time.stftime("%H:%M:%S")
+                    #if (nk_combo_begin_label(ctx, buffer, nk_vec2(200,250))) {
+                    #    time_selected = 1;
+                    #    nk_layout_row_dynamic(ctx, 25, 1);
+                    #    sel_time.tm_sec = nk_propertyi(ctx, "#S:", 0, sel_time.tm_sec, 60, 1, 1);
+                    #    sel_time.tm_min = nk_propertyi(ctx, "#M:", 0, sel_time.tm_min, 60, 1, 1);
+                    #    sel_time.tm_hour = nk_propertyi(ctx, "#H:", 0, sel_time.tm_hour, 23, 1, 1);
+                    #    nk_combo_end(ctx);
+                    #}
+                    if pynk.lib.nk_combo_begin_label(ctx, sel_time_str, pynk.lib.nk_vec2(200,250)):
+                        self.time_selected = True;
+                        pynk.lib.nk_layout_row_dynamic(ctx, 25, 1);
+                        self.sel_time.second = pynk.lib.nk_propertyi(ctx, "#S:", 0, self.sel_time.second, 60, 1, 1);
+                        self.sel_time.minute = pynk.lib.nk_propertyi(ctx, "#M:", 0, self.sel_time.minute, 60, 1, 1);
+                        self.sel_time.hour = pynk.lib.nk_propertyi(ctx, "#H:", 0, self.sel_time.hour, 23, 1, 1);
+                        pynk.lib.nk_combo_end(ctx);
+                    #
+                    #/* date combobox */
+                    #sprintf(buffer, "%02d-%02d-%02d", sel_date.tm_mday, sel_date.tm_mon+1, sel_date.tm_year+1900);
+                    #if (nk_combo_begin_label(ctx, buffer, nk_vec2(350,400)))
+                    #{
+                    sel_date_str = self.sel_date.strftime("%d-%m-%y")
+                    if pynk.lib.nk_combo_begin_label(ctx, sel_date_str, pynk.lib.nk_vec2(350,400)):
+
 
 # TODO: The rest of it. * * * * * * * * * * * * * * * * * *
 # TODO: nk_tree_push() is a macro so we cant actually use it, need to use
 # TODO: nk_tree_push_hashed().
 #
-#                 {
-#                     static int time_selected = 0;
-#                     static int date_selected = 0;
-#                     static struct tm sel_time;
-#                     static struct tm sel_date;
-#                     if (!time_selected || !date_selected) {
-#                         /* keep time and date updated if nothing is selected */
-#                         time_t cur_time = time(0);
-#                         struct tm *n = localtime(&cur_time);
-#                         if (!time_selected)
-#                             memcpy(&sel_time, n, sizeof(struct tm));
-#                         if (!date_selected)
-#                             memcpy(&sel_date, n, sizeof(struct tm));
-#                     }
-#
-#                     /* time combobox */
-#                     sprintf(buffer, "%02d:%02d:%02d", sel_time.tm_hour, sel_time.tm_min, sel_time.tm_sec);
-#                     if (nk_combo_begin_label(ctx, buffer, nk_vec2(200,250))) {
-#                         time_selected = 1;
-#                         nk_layout_row_dynamic(ctx, 25, 1);
-#                         sel_time.tm_sec = nk_propertyi(ctx, "#S:", 0, sel_time.tm_sec, 60, 1, 1);
-#                         sel_time.tm_min = nk_propertyi(ctx, "#M:", 0, sel_time.tm_min, 60, 1, 1);
-#                         sel_time.tm_hour = nk_propertyi(ctx, "#H:", 0, sel_time.tm_hour, 23, 1, 1);
-#                         nk_combo_end(ctx);
-#                     }
-#
-#                     /* date combobox */
-#                     sprintf(buffer, "%02d-%02d-%02d", sel_date.tm_mday, sel_date.tm_mon+1, sel_date.tm_year+1900);
-#                     if (nk_combo_begin_label(ctx, buffer, nk_vec2(350,400)))
-#                     {
 #                         int i = 0;
 #                         const char *month[] = {"January", "February", "March", "Apil", "May", "June", "July", "August", "September", "Ocotober", "November", "December"};
 #                         const char *week_days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
