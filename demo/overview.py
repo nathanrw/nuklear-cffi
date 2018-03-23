@@ -59,6 +59,12 @@ class Overview(object):
         keepalive = [pynk.ffi.new("const char[]", s) for s in lst]
         self.__strings += keepalive
         self.declare(name, keepalive, "const char*[]")
+
+    def declare_string_buffers(self, name, num_strings, string_length):
+        """ Method to declare an array of string buffers. """
+        keepalive = [pynk.ffi.new("char[%s]" % string_length) for i in xrange(num_strings)]
+        self.__strings += keepalive
+        self.declare(name, keepalive, "char*[]")
     #
     # static int
     # overview(struct nk_context *ctx)
@@ -889,154 +895,267 @@ class Overview(object):
                     #{
                     sel_date_str = self.sel_date.strftime("%d-%m-%y")
                     if pynk.lib.nk_combo_begin_label(ctx, sel_date_str, pynk.lib.nk_vec2(350,400)):
+                        # int i = 0;
+                        # const char *month[] = {"January", "February", "March", "Apil", "May", "June", "July", "August", "September", "Ocotober", "November", "December"};
+                        # const char *week_days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+                        # const int month_days[] = {31,28,31,30,31,30,31,31,30,31,30,31};
+                        # int year = sel_date.tm_year+1900;
+                        # int leap_year = (!(year % 4) && ((year % 100))) || !(year % 400);
+                        # int days = (sel_date.tm_mon == 1) ?
+                        #     month_days[sel_date.tm_mon] + leap_year:
+                        #     month_days[sel_date.tm_mon];
+                        month = ["January", "February", "March", "Apil", "May", "June", "July", "August", "September", "Ocotober", "November", "December"]
+                        week_days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+                        month_days = [31,28,31,30,31,30,31,31,30,31,30,31]
+                        year = self.sel_date.year+1900;
+                        leap_year = (not (year % 4) and ((year % 100))) or not (year % 400)
+                        int days = month_days[sel_date.tm_mon] + leap_year if self.sel_date.month == 1 else month_days[sel_date.tm_mon];
 
+                        #
+                        # /* header with month and year */
+                        # date_selected = 1;
+                        # nk_layout_row_begin(ctx, NK_DYNAMIC, 20, 3);
+                        # nk_layout_row_push(ctx, 0.05f);
+                        # if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_LEFT)) {
+                        #     if (sel_date.tm_mon == 0) {
+                        #         sel_date.tm_mon = 11;
+                        #         sel_date.tm_year = MAX(0, sel_date.tm_year-1);
+                        #     } else sel_date.tm_mon--;
+                        # }
+                        # nk_layout_row_push(ctx, 0.9f);
+                        # sprintf(buffer, "%s %d", month[sel_date.tm_mon], year);
+                        # nk_label(ctx, buffer, NK_TEXT_CENTERED);
+                        # nk_layout_row_push(ctx, 0.05f);
+                        # if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT)) {
+                        #     if (sel_date.tm_mon == 11) {
+                        #         sel_date.tm_mon = 0;
+                        #         sel_date.tm_year++;
+                        #     } else sel_date.tm_mon++;
+                        # }
+                        # nk_layout_row_end(ctx);
+                        self.date_selected = True;
+                        pynk.lib.nk_layout_row_begin(ctx, pynk.lib.NK_DYNAMIC, 20, 3)
+                        pynk.lib.nk_layout_row_push(ctx, 0.05)
+                        if pynk.lib.nk_button_symbol(ctx, pynk.lib.NK_SYMBOL_TRIANGLE_LEFT):
+                            if self.sel_date.month == 0:
+                                self.sel_date.month = 11
+                                self.sel_date.year = math.max(0, self.sel_date.year-1)
+                            else:
+                                self.sel_date.month -= 1
+                        }
+                        pynk.lib.nk_layout_row_push(ctx, 0.9)
+                        buf = "%s %s" % (month[self.sel_date.tm_mon], year)
+                        pynk.lib.nk_label(ctx, pynk.lib.buf, NK_TEXT_CENTERED);
+                        pynk.lib.nk_layout_row_push(ctx, 0.05);
+                        if pynk.lib.nk_button_symbol(ctx, pynk.lib.NK_SYMBOL_TRIANGLE_RIGHT):
+                            if self.sel_date.month == 11:
+                                self.sel_date.month = 0
+                                self.sel_date.year += 1
+                            else:
+                                sel_date.tm_mon += 1
+                        pynk.lib.nk_layout_row_end(ctx);
 
+                        #
+                        # /* good old week day formula (double because precision) */
+                        # {int year_n = (sel_date.tm_mon < 2) ? year-1: year;
+                        # int y = year_n % 100;
+                        # int c = year_n / 100;
+                        # int y4 = (int)((float)y / 4);
+                        # int c4 = (int)((float)c / 4);
+                        # int m = (int)(2.6 * (double)(((sel_date.tm_mon + 10) % 12) + 1) - 0.2);
+                        # int week_day = (((1 + m + y + y4 + c4 - 2 * c) % 7) + 7) % 7;
+                        #
+                        # /* weekdays  */
+                        # nk_layout_row_dynamic(ctx, 35, 7);
+                        # for (i = 0; i < (int)LEN(week_days); ++i)
+                        #     nk_label(ctx, week_days[i], NK_TEXT_CENTERED);
+                        #
+                        # /* days  */
+                        # if (week_day > 0) nk_spacing(ctx, week_day);
+                        # for (i = 1; i <= days; ++i) {
+                        #     sprintf(buffer, "%d", i);
+                        #     if (nk_button_label(ctx, buffer)) {
+                        #         sel_date.tm_mday = i;
+                        #         nk_combo_close(ctx);
+                        #     }
+                        # }}
+                        # nk_combo_end(ctx);
+                        year_n = year-1 if self.sel_date.month < 2 else ? year-1: year;
+                        y = year_n % 100;
+                        c = year_n / 100;
+                        y4 = int(y/4.0) # NOTE: is this doing the same thing?
+                        c4 = int(c/4.0)
+                        m =  int(2.6 * (((self.sel_date.month + 10) % 12) + 1) - 0.2)
+                        week_day = (((1 + m + y + y4 + c4 - 2 * c) % 7) + 7) % 7;
+                        
+                        pynk.lib.nk_layout_row_dynamic(ctx, 35, 7);
+                        for (i = 0; i < len(week_days); ++i)
+                            pynk.lib.nk_label(ctx, week_days[i], pynk.lib.NK_TEXT_CENTERED);
+                        
+                        if week_day > 0: pynk.lib.nk_spacing(ctx, week_day);
+                        for i in range(1, days):
+                            if nk_button_label(ctx, str(i)):
+                                self.sel_date.day = i;
+                                pynk.lib.nk_combo_close(ctx);
+                        pynk.lib.nk_combo_end(ctx);
+                    # }
+                # }
+                #
+                # nk_tree_pop(ctx);
+                pynk.lib.nk_tree_pop(ctx)
+            # }
+            # if (nk_tree_push(ctx, NK_TREE_NODE, "Input", NK_MINIMIZED))
+            # {
+            if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "Input", pynk.lib.NK_MINIMIZED):
+                # static const float ratio[] = {120, 150};
+                # static char field_buffer[64];
+                # static char text[9][64];
+                # static int text_len[9];
+                # static char box_buffer[512];
+                # static int field_len;
+                # static int box_len;
+                # nk_flags active;
+                self.declare("ratio", [120, 150], "float[]")
+                self.declare("field_buffer", [0]*64, "char[]")
+                self.declare_string_buffers("text", 9, 64)
+                self.declare("text_len", [0]*9, "int[]")
+                self.declare("box_buffer", [0]*512, "char[]")
+                self.declare("field_len", 0, "int*")
+                self.declare("box_len", 0, "int*")
+                active = 0
+
+#
+                # nk_layout_row(ctx, NK_STATIC, 25, 2, ratio); #                 nk_label(ctx, "Default:", NK_TEXT_LEFT);
+                #
+                # nk_edit_string(ctx, NK_EDIT_SIMPLE, text[0], &text_len[0], 64, nk_filter_default);
+                # nk_label(ctx, "Int:", NK_TEXT_LEFT);
+                # nk_edit_string(ctx, NK_EDIT_SIMPLE, text[1], &text_len[1], 64, nk_filter_decimal);
+                # nk_label(ctx, "Float:", NK_TEXT_LEFT);
+                # nk_edit_string(ctx, NK_EDIT_SIMPLE, text[2], &text_len[2], 64, nk_filter_float);
+                # nk_label(ctx, "Hex:", NK_TEXT_LEFT);
+                # nk_edit_string(ctx, NK_EDIT_SIMPLE, text[4], &text_len[4], 64, nk_filter_hex);
+                # nk_label(ctx, "Octal:", NK_TEXT_LEFT);
+                # nk_edit_string(ctx, NK_EDIT_SIMPLE, text[5], &text_len[5], 64, nk_filter_oct);
+                # nk_label(ctx, "Binary:", NK_TEXT_LEFT);
+                # nk_edit_string(ctx, NK_EDIT_SIMPLE, text[6], &text_len[6], 64, nk_filter_binary);
+#
+                pynk.lib.nk_layout_row(ctx, pynk.lib.NK_STATIC, 25, 2, self.ratio); #                 nk_label(ctx, "Default:", NK_TEXT_LEFT);
+                
+                pynk.lib.nk_edit_string(ctx, pynk.lib.NK_EDIT_SIMPLE, self.text[0], 
+                                        self.text_len[0], 64, pynk.lib.nk_filter_default);
+                pynk.lib.nk_label(ctx, "Int:", pynk.lib.NK_TEXT_LEFT);
+                pynk.lib.nk_edit_string(ctx, pynk.lib.NK_EDIT_SIMPLE, self.text[1], self.text_len[1], 
+                                        64, pynk.lib.nk_filter_decimal);
+                pynk.lib.nk_label(ctx, "Float:", pynk.lib.NK_TEXT_LEFT);
+                pynk.lib.nk_edit_string(ctx, pynk.lib.NK_EDIT_SIMPLE, self.text[2], 
+                                        self.text_len[2], 64, pynk.lib.nk_filter_float);
+                pynk.lib.nk_label(ctx, "Hex:", pynk.lib.NK_TEXT_LEFT);
+                pynk.lib.nk_edit_string(ctx, pynk.lib.NK_EDIT_SIMPLE, self.text[4], 
+                                        self.text_len[4], 64, pynk.lib.nk_filter_hex);
+                pynk.lib.nk_label(ctx, "Octal:", pynk.lib.NK_TEXT_LEFT);
+                pynk.lib.nk_edit_string(ctx, pynk.lib.NK_EDIT_SIMPLE, self.text[5], 
+                                        self.text_len[5], 64, pynk.lib.nk_filter_oct);
+                pynk.lib.nk_label(ctx, "Binary:", pynk.lib.NK_TEXT_LEFT);
+                pynk.lib.k_edit_string(ctx, pynk.lib.NK_EDIT_SIMPLE, self.text[6], 
+                                       self.text_len+6, 64, pynk.lib.nk_filter_binary);
+                #
+                # nk_label(ctx, "Password:", NK_TEXT_LEFT);
+                # {
+                #     int i = 0;
+                #     int old_len = text_len[8];
+                #     char buffer[64];
+                #     for (i = 0; i < text_len[8]; ++i) buffer[i] = '*';
+                #     nk_edit_string(ctx, NK_EDIT_FIELD, buffer, &text_len[8], 64, nk_filter_default);
+                #     if (old_len < text_len[8])
+                #         memcpy(&text[8][old_len], &buffer[old_len], (nk_size)(text_len[8] - old_len));
+                # }
+                pynk.lib.nk_label(ctx, "Password:", pynk.lib.NK_TEXT_LEFT);
+                old_len = self.text_len[8];
+                buf = pynk.ffi.new("char[64]")
+                for i in range(0, self.text_len[8]):
+                    buf[i] = "*"
+                pynk.lib.nk_edit_string(ctx, pynk.lib.NK_EDIT_FIELD, buf, self.text_len+8, 
+                                        64, pynk.lib.nk_filter_default);
+                if old_len < self.text_len[8]:
+                    self.memcpy(self.text+8, old_len, buf, old_len, self.text_len[8] - old_len);
+                #
+                #  nk_label(ctx, "Field:", NK_TEXT_LEFT);
+                #  nk_edit_string(ctx, NK_EDIT_FIELD, field_buffer, &field_len, 64, nk_filter_default);
+                #
+                #  nk_label(ctx, "Box:", NK_TEXT_LEFT);
+                #  nk_layout_row_static(ctx, 180, 278, 1);
+                #  nk_edit_string(ctx, NK_EDIT_BOX, box_buffer, &box_len, 512, nk_filter_default);
+                #
+                #  nk_layout_row(ctx, NK_STATIC, 25, 2, ratio);
+                #  active = nk_edit_string(ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, text[7], &text_len[7], 64,  nk_filter_ascii);
+                
+                pynk.lib.nk_label(ctx, "Field:", pynk.lib.NK_TEXT_LEFT);
+                pynk.lib.nk_edit_string(ctx, pynk.lib.NK_EDIT_FIELD, self.field_buffer, 
+                                        self.field_len, 64, pynk.lib.nk_filter_default);
+                
+                pynk.lib.nk_label(ctx, "Box:", pynk.lib.NK_TEXT_LEFT);
+                pynk.lib.nk_layout_row_static(ctx, 180, 278, 1);
+                pynk.lib.nk_edit_string(ctx, pynk.lib.NK_EDIT_BOX, self.box_buffer, self.box_len, 
+                                        512, pynk.lib.nk_filter_default);
+                
+                pynk.lib.nk_layout_row(ctx, pynk.lib.NK_STATIC, 25, 2, self.ratio);
+                active = nk_edit_string(ctx, pynk.lib.NK_EDIT_FIELD|pynk.lib.NK_EDIT_SIG_ENTER, 
+                                        self.text[7], self.text_len+7, 64,  pynk.lib.nk_filter_ascii);
+                # if (nk_button_label(ctx, "Submit") ||
+                #     (active & NK_EDIT_COMMITED))
+                # {
+                #     text[7][text_len[7]] = '\n';
+                #     text_len[7]++;
+                #     memcpy(&box_buffer[box_len], &text[7], (nk_size)text_len[7]);
+                #     box_len += text_len[7];
+                #     text_len[7] = 0;
+                # }
+                # nk_tree_pop(ctx);
+                if pynk.lib.nk_button_label(ctx, "Submit") or (active & pynk.lib.NK_EDIT_COMMITED):
+                    self.text[7][text_len[7]] = '\n';
+                    text_len[7] += 1
+                    #TODO: memcpy(&box_buffer[box_len], &text[7], (nk_size)text_len[7]);
+                    self.box_len += self.text_len[7];
+                    self.text_len[7] = 0;
+                pynk.lib.nk_tree_pop(ctx);
+            # }
+            # nk_tree_pop(ctx);
+            pynk.lib.nk_tree_pop(ctx);
+        # }
+        #
+        # if (nk_tree_push(ctx, NK_TREE_TAB, "Chart", NK_MINIMIZED))
+        # {
+        if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_TAB, "Chart", pynk.lib.NK_MINIMIZED):
+            # /* Chart Widgets
+            #  * This library has two different rather simple charts. The line and the
+            #  * column chart. Both provide a simple way of visualizing values and
+            #  * have a retained mode and immediate mode API version. For the retain
+            #  * mode version `nk_plot` and `nk_plot_function` you either provide
+            #  * an array or a callback to call to handle drawing the graph.
+            #  * For the immediate mode version you start by calling `nk_chart_begin`
+            #  * and need to provide min and max values for scaling on the Y-axis.
+            #  * and then call `nk_chart_push` to push values into the chart.
+            #  * Finally `nk_chart_end` needs to be called to end the process. */
+            # float id = 0;
+            # static int col_index = -1;
+            # static int line_index = -1;
+            # float step = (2*3.141592654f) / 32;
+            #
+            # int i;
+            # int index = -1;
+            # struct nk_rect bounds;
+            id = pynk.ffi.new("float*", 0)
+            self.declare("col_index", -1, "int*")
+            self.declare("line_index", -1, "int*")
+            step = (2*3.141592654) / 32;
+            
+            i = 0;
+            index = -1;
+            bounds = pynk.ffi.new("struct nk_rect*")
 # TODO: The rest of it. * * * * * * * * * * * * * * * * * *
 # TODO: nk_tree_push() is a macro so we cant actually use it, need to use
 # TODO: nk_tree_push_hashed().
 #
-#                         int i = 0;
-#                         const char *month[] = {"January", "February", "March", "Apil", "May", "June", "July", "August", "September", "Ocotober", "November", "December"};
-#                         const char *week_days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
-#                         const int month_days[] = {31,28,31,30,31,30,31,31,30,31,30,31};
-#                         int year = sel_date.tm_year+1900;
-#                         int leap_year = (!(year % 4) && ((year % 100))) || !(year % 400);
-#                         int days = (sel_date.tm_mon == 1) ?
-#                             month_days[sel_date.tm_mon] + leap_year:
-#                             month_days[sel_date.tm_mon];
-#
-#                         /* header with month and year */
-#                         date_selected = 1;
-#                         nk_layout_row_begin(ctx, NK_DYNAMIC, 20, 3);
-#                         nk_layout_row_push(ctx, 0.05f);
-#                         if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_LEFT)) {
-#                             if (sel_date.tm_mon == 0) {
-#                                 sel_date.tm_mon = 11;
-#                                 sel_date.tm_year = MAX(0, sel_date.tm_year-1);
-#                             } else sel_date.tm_mon--;
-#                         }
-#                         nk_layout_row_push(ctx, 0.9f);
-#                         sprintf(buffer, "%s %d", month[sel_date.tm_mon], year);
-#                         nk_label(ctx, buffer, NK_TEXT_CENTERED);
-#                         nk_layout_row_push(ctx, 0.05f);
-#                         if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT)) {
-#                             if (sel_date.tm_mon == 11) {
-#                                 sel_date.tm_mon = 0;
-#                                 sel_date.tm_year++;
-#                             } else sel_date.tm_mon++;
-#                         }
-#                         nk_layout_row_end(ctx);
-#
-#                         /* good old week day formula (double because precision) */
-#                         {int year_n = (sel_date.tm_mon < 2) ? year-1: year;
-#                         int y = year_n % 100;
-#                         int c = year_n / 100;
-#                         int y4 = (int)((float)y / 4);
-#                         int c4 = (int)((float)c / 4);
-#                         int m = (int)(2.6 * (double)(((sel_date.tm_mon + 10) % 12) + 1) - 0.2);
-#                         int week_day = (((1 + m + y + y4 + c4 - 2 * c) % 7) + 7) % 7;
-#
-#                         /* weekdays  */
-#                         nk_layout_row_dynamic(ctx, 35, 7);
-#                         for (i = 0; i < (int)LEN(week_days); ++i)
-#                             nk_label(ctx, week_days[i], NK_TEXT_CENTERED);
-#
-#                         /* days  */
-#                         if (week_day > 0) nk_spacing(ctx, week_day);
-#                         for (i = 1; i <= days; ++i) {
-#                             sprintf(buffer, "%d", i);
-#                             if (nk_button_label(ctx, buffer)) {
-#                                 sel_date.tm_mday = i;
-#                                 nk_combo_close(ctx);
-#                             }
-#                         }}
-#                         nk_combo_end(ctx);
-#                     }
-#                 }
-#
-#                 nk_tree_pop(ctx);
-#             }
-#
-#             if (nk_tree_push(ctx, NK_TREE_NODE, "Input", NK_MINIMIZED))
-#             {
-#                 static const float ratio[] = {120, 150};
-#                 static char field_buffer[64];
-#                 static char text[9][64];
-#                 static int text_len[9];
-#                 static char box_buffer[512];
-#                 static int field_len;
-#                 static int box_len;
-#                 nk_flags active;
-#
-#                 nk_layout_row(ctx, NK_STATIC, 25, 2, ratio);
-#                 nk_label(ctx, "Default:", NK_TEXT_LEFT);
-#
-#                 nk_edit_string(ctx, NK_EDIT_SIMPLE, text[0], &text_len[0], 64, nk_filter_default);
-#                 nk_label(ctx, "Int:", NK_TEXT_LEFT);
-#                 nk_edit_string(ctx, NK_EDIT_SIMPLE, text[1], &text_len[1], 64, nk_filter_decimal);
-#                 nk_label(ctx, "Float:", NK_TEXT_LEFT);
-#                 nk_edit_string(ctx, NK_EDIT_SIMPLE, text[2], &text_len[2], 64, nk_filter_float);
-#                 nk_label(ctx, "Hex:", NK_TEXT_LEFT);
-#                 nk_edit_string(ctx, NK_EDIT_SIMPLE, text[4], &text_len[4], 64, nk_filter_hex);
-#                 nk_label(ctx, "Octal:", NK_TEXT_LEFT);
-#                 nk_edit_string(ctx, NK_EDIT_SIMPLE, text[5], &text_len[5], 64, nk_filter_oct);
-#                 nk_label(ctx, "Binary:", NK_TEXT_LEFT);
-#                 nk_edit_string(ctx, NK_EDIT_SIMPLE, text[6], &text_len[6], 64, nk_filter_binary);
-#
-#                 nk_label(ctx, "Password:", NK_TEXT_LEFT);
-#                 {
-#                     int i = 0;
-#                     int old_len = text_len[8];
-#                     char buffer[64];
-#                     for (i = 0; i < text_len[8]; ++i) buffer[i] = '*';
-#                     nk_edit_string(ctx, NK_EDIT_FIELD, buffer, &text_len[8], 64, nk_filter_default);
-#                     if (old_len < text_len[8])
-#                         memcpy(&text[8][old_len], &buffer[old_len], (nk_size)(text_len[8] - old_len));
-#                 }
-#
-#                 nk_label(ctx, "Field:", NK_TEXT_LEFT);
-#                 nk_edit_string(ctx, NK_EDIT_FIELD, field_buffer, &field_len, 64, nk_filter_default);
-#
-#                 nk_label(ctx, "Box:", NK_TEXT_LEFT);
-#                 nk_layout_row_static(ctx, 180, 278, 1);
-#                 nk_edit_string(ctx, NK_EDIT_BOX, box_buffer, &box_len, 512, nk_filter_default);
-#
-#                 nk_layout_row(ctx, NK_STATIC, 25, 2, ratio);
-#                 active = nk_edit_string(ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, text[7], &text_len[7], 64,  nk_filter_ascii);
-#                 if (nk_button_label(ctx, "Submit") ||
-#                     (active & NK_EDIT_COMMITED))
-#                 {
-#                     text[7][text_len[7]] = '\n';
-#                     text_len[7]++;
-#                     memcpy(&box_buffer[box_len], &text[7], (nk_size)text_len[7]);
-#                     box_len += text_len[7];
-#                     text_len[7] = 0;
-#                 }
-#                 nk_tree_pop(ctx);
-#             }
-#             nk_tree_pop(ctx);
-#         }
-#
-#         if (nk_tree_push(ctx, NK_TREE_TAB, "Chart", NK_MINIMIZED))
-#         {
-#             /* Chart Widgets
-#              * This library has two different rather simple charts. The line and the
-#              * column chart. Both provide a simple way of visualizing values and
-#              * have a retained mode and immediate mode API version. For the retain
-#              * mode version `nk_plot` and `nk_plot_function` you either provide
-#              * an array or a callback to call to handle drawing the graph.
-#              * For the immediate mode version you start by calling `nk_chart_begin`
-#              * and need to provide min and max values for scaling on the Y-axis.
-#              * and then call `nk_chart_push` to push values into the chart.
-#              * Finally `nk_chart_end` needs to be called to end the process. */
-#             float id = 0;
-#             static int col_index = -1;
-#             static int line_index = -1;
-#             float step = (2*3.141592654f) / 32;
-#
-#             int i;
-#             int index = -1;
-#             struct nk_rect bounds;
 #
 #             /* line chart */
 #             id = 0;
