@@ -48,3 +48,11 @@ integrated.  You will have to install the one in my github fork.
 
 For the pygame integration code, `pygame` is necessary, but it's not a
 requirement for installation or to use the binding.
+
+Note to self: How to do a release
+---------------------------------
+
+- Make sure it builds, installs, and works.
+- Increment the version number in `setup.py`
+- `python2 setup.py sdist bdist_wheel`
+- `python2 -m twine upload dist/*`
