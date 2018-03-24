@@ -67,6 +67,15 @@ class Overview(object):
         keepalive = [pynk.ffi.new("char[%s]" % string_length) for i in xrange(num_strings)]
         self.__strings += keepalive
         self.declare(name, keepalive, "char*[]")
+
+    def tree_push(self, ctx, tree_type, title, state, unique_id_str, seed=0):
+        """ The 'nk_tree_push' macro generates a unique ID for your tree based on the
+        current line number and file name.  But in Python we don't have the C preprocessor.
+        
+        In Python you can do all sorts of magic like interrogate the call stack, but let's
+        keep it really simple and just come up with a unique ID for each tree... """
+        pynk.lib.nk_tree_push_hashed(ctx, tree_type, title, state, unique_id_str, len(unique_id_str), seed)
+
     #
     # static int
     # overview(struct nk_context *ctx)
@@ -88,15 +97,15 @@ class Overview(object):
         # static int scale_left = nk_false;
         # static nk_flags window_flags = 0;
         # static int minimizable = nk_true;
-        self.declare("show_menu", 1, "nk_bool*")
-        self.declare("titlebar", 1, "nk_bool*")
-        self.declare("border", 1, "nk_bool*")
-        self.declare("resize", 1, "nk_bool*")
-        self.declare("movable", 1, "nk_bool*")
-        self.declare("no_scrollbar", 0, "nk_bool*")
-        self.declare("scale_left", 0, "nk_bool*")
+        self.declare("show_menu", 1, "int*")
+        self.declare("titlebar", 1, "int*")
+        self.declare("border", 1, "int*")
+        self.declare("resize", 1, "int*")
+        self.declare("movable", 1, "int*")
+        self.declare("no_scrollbar", 0, "int*")
+        self.declare("scale_left", 0, "int*")
         self.declare("window_flags", 0, "int*")
-        self.declare("minimizable", 1, "nk_bool*")
+        self.declare("minimizable", 1, "int*")
 
 
         #
@@ -142,7 +151,7 @@ class Overview(object):
                 MENU_WINDOWS = 1
                 self.declare("mprog", 60, "nk_size*")
                 self.declare("mslider", 10, "int*")
-                self.declare("mcheck", True)
+                self.declare("mcheck", 0, "int*")
                 pynk.lib.nk_menubar_begin(ctx)
 
                 #
@@ -303,7 +312,7 @@ class Overview(object):
                 pynk.lib.nk_progress(ctx, self.mprog, 100, pynk.lib.NK_MODIFIABLE)
                 pynk.lib.nk_slider_int(ctx, 0, self.mslider, 16, 1)
                 pynk.lib.nk_checkbox_label(ctx, "check", self.mcheck)
-                pynk.lin.nk_menubar_end(ctx);
+                pynk.lib.nk_menubar_end(ctx);
             # }
             #
             # if (show_app_about)
@@ -341,7 +350,7 @@ class Overview(object):
             #     nk_checkbox_label(ctx, "Scale Left", &scale_left);
             #     nk_tree_pop(ctx);
             # }
-            if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_TAB, "Window", pynk.lib.NK_MINIMIZED):
+            if self.tree_push(ctx, pynk.lib.NK_TREE_TAB, "Window", pynk.lib.NK_MINIMIZED, "1"):
                 pynk.lib.nk_layout_row_dynamic(ctx, 30, 2);
                 pynk.lib.nk_checkbox_label(ctx, "Titlebar", self.titlebar);
                 pynk.lib.nk_checkbox_label(ctx, "Menu", self.show_menu);
@@ -358,7 +367,7 @@ class Overview(object):
             #     enum options {A,B,C};
             #     static int checkbox;
             #     static int option;
-            if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_TAB, "Widgets", pynk.libs.NK_MINIMISED):
+            if self.tree_push(ctx, pynk.lib.NK_TREE_TAB, "Widgets", pynk.lib.NK_MINIMIZED, "2"):
                 A = 0
                 B = 1
                 C = 2
@@ -382,7 +391,7 @@ class Overview(object):
                 #     nk_label_wrap(ctx, "This is another long text to show dynamic window changes on multiline text");
                 #     nk_tree_pop(ctx);
                 # }
-                if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "Text", pynk.lib.NK_MINIMIZED):
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Text", pynk.lib.NK_MINIMIZED, "3"):
                     pynk.lib.nk_layout_row_dynamic(ctx, 20, 1);
                     pynk.lib.nk_label(ctx, "Label aligned left", pynk.lib.NK_TEXT_LEFT);
                     pynk.lib.nk_label(ctx, "Label aligned centered", pynk.lib.NK_TEXT_CENTERED);
@@ -423,7 +432,7 @@ class Overview(object):
                 #     nk_button_symbol_label(ctx, NK_SYMBOL_TRIANGLE_RIGHT, "next", NK_TEXT_LEFT);
                 #     nk_tree_pop(ctx);
                 # }
-                if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "Button", pynk.lib.NK_MINIMIZED):
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Button", pynk.lib.NK_MINIMIZED, "4"):
                     pynk.lib.nk_layout_row_static(ctx, 30, 100, 3);
                     if pynk.lib.nk_button_label(ctx, "Button"):
                         print "Button pressed!"
@@ -503,7 +512,7 @@ class Overview(object):
                 #
                 #     nk_tree_pop(ctx);
                 # }
-                if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "Basic", pynk.lib.NK_MINIMIZED):
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Basic", pynk.lib.NK_MINIMIZED, "5"):
                     self.declare("int_slider", 5, "int*")
                     self.declare("float_slider", 2.5, "float*")
                     self.declare("prog_value", 40, "size_t*")
@@ -590,8 +599,8 @@ class Overview(object):
                 #     }
                 #     nk_tree_pop(ctx);
                 # }
-                if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "Selectable", pynk.lib.NK_MINIMIZED):
-                    if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "List", pynk.lib.NK_MINIMIZED):
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Selectable", pynk.lib.NK_MINIMIZED, "6"):
+                    if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "List", pynk.lib.NK_MINIMIZED, "7"):
                         self.declare("selected1", [0, 0, 1, 0], "int[]")
                         pynk.lib.nk_layout_row_static(ctx, 18, 100, 1);
                         pynk.lib.nk_selectable_label(ctx, "Selectable", pynk.lib.NK_TEXT_LEFT, self.selected1+0);
@@ -600,7 +609,7 @@ class Overview(object):
                         pynk.lib.nk_selectable_label(ctx, "Selectable", pynk.lib.NK_TEXT_LEFT, self.selected1+2);
                         pynk.lib.nk_selectable_label(ctx, "Selectable", pynk.lib.NK_TEXT_LEFT, self.selected1+3);
                         pynk.lib.nk_tree_pop(ctx);
-                    if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "Grid", pynk.lib.NK_MINIMIZED):
+                    if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Grid", pynk.lib.NK_MINIMIZED, "8"):
                         self.declare("selected2", [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], "int[]")
                         pynk.lib.nk_layout_row_static(ctx, 50, 50, 4);
                         for i in xrange(len(self.selected2)):
@@ -643,7 +652,7 @@ class Overview(object):
                 #      * which only show the currently activated time/data and hide the
                 #      * selection logic inside the combobox popup.
                 #      */
-                if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "Combo", pynk.lib.NK_MINIMIZED):
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Combo", pynk.lib.NK_MINIMIZED, "9"):
                     # static float chart_selection = 8.0f;
                     # static int current_weapon = 0;
                     # static int check_values[5];
@@ -1008,7 +1017,7 @@ class Overview(object):
             # }
             # if (nk_tree_push(ctx, NK_TREE_NODE, "Input", NK_MINIMIZED))
             # {
-            if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "Input", pynk.lib.NK_MINIMIZED):
+            if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Input", pynk.lib.NK_MINIMIZED, "10"):
                 # static const float ratio[] = {120, 150};
                 # static char field_buffer[64];
                 # static char text[9][64];
@@ -1127,7 +1136,7 @@ class Overview(object):
         #
         # if (nk_tree_push(ctx, NK_TREE_TAB, "Chart", NK_MINIMIZED))
         # {
-        if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_TAB, "Chart", pynk.lib.NK_MINIMIZED):
+        if self.tree_push(ctx, pynk.lib.NK_TREE_TAB, "Chart", pynk.lib.NK_MINIMIZED, "11"):
             # /* Chart Widgets
             #  * This library has two different rather simple charts. The line and the
             #  * column chart. Both provide a simple way of visualizing values and
@@ -1154,11 +1163,7 @@ class Overview(object):
             i = 0;
             index = -1;
             bounds = pynk.ffi.new("struct nk_rect*")
-# TODO: The rest of it. * * * * * * * * * * * * * * * * * *
-# TODO: nk_tree_push() is a macro so we cant actually use it, need to use
-# TODO: nk_tree_push_hashed().
-#
-#
+
             # nk_layout_row_dynamic(ctx, 100, 1);
             # if (nk_chart_begin(ctx, NK_CHART_LINES, 32, -1.0f, 1.0f)) {
             #     for (i = 0; i < 32; ++i) {
@@ -1291,7 +1296,7 @@ class Overview(object):
         #
         # if (nk_tree_push(ctx, NK_TREE_TAB, "Popup", NK_MINIMIZED))
         # {
-        if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_TAB, "Popup", pynk.lib.NK_MINIMIZED):
+        if self.tree_push(ctx, pynk.lib.NK_TREE_TAB, "Popup", pynk.lib.NK_MINIMIZED, "12"):
             # static struct nk_color color = {255,0,0, 255};
             # static int select[4];
             # static int popup_active;
@@ -1446,10 +1451,10 @@ class Overview(object):
             #
             # if (nk_tree_push(ctx, NK_TREE_TAB, "Layout", NK_MINIMIZED))
             # {
-            if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_TAB, "Layout", pynk.lib.NK_MINIMIZED):
+            if self.tree_push(ctx, pynk.lib.NK_TREE_TAB, "Layout", pynk.lib.NK_MINIMIZED, "13"):
                 # if (nk_tree_push(ctx, NK_TREE_NODE, "Widget", NK_MINIMIZED))
                 # {
-                if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "Widget", pynk.lib.NK_MINIMIZED):
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Widget", pynk.lib.NK_MINIMIZED, "14"):
                     # float ratio_two[] = {0.2f, 0.6f, 0.2f};
                     # float width_two[] = {100, 200, 50};
                     ratio_two = pynk.ffi.new("float[]", [0.2, 0.6, 0.2])
@@ -1602,7 +1607,7 @@ class Overview(object):
                 #
                 # if (nk_tree_push(ctx, NK_TREE_NODE, "Group", NK_MINIMIZED))
                 # {
-                if nk_tree_push(ctx, NK_TREE_NODE, "Group", NK_MINIMIZED):
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Group", pynk.lib.NK_MINIMIZED, "15"):
                     # static int group_titlebar = nk_false;
                     # static int group_border = nk_true;
                     # static int group_no_scrollbar = nk_false;
@@ -1672,7 +1677,7 @@ class Overview(object):
                 #
                 # if (nk_tree_push(ctx, NK_TREE_NODE, "Notebook", NK_MINIMIZED))
                 # {
-                if pynk.lib.nk_tree_push(ctx, pynk.lib.NK_TREE_NODE, "Notebook", pynk.lib.NK_MINIMIZED):
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Notebook", pynk.lib.NK_MINIMIZED, "16"):
                     # static int current_tab = 0;
                     # struct nk_vec2 item_padding;
                     # struct nk_rect bounds;
@@ -1681,352 +1686,623 @@ class Overview(object):
                     # const char *names[] = {"Lines", "Columns", "Mixed"};
                     # float id = 0;
                     # int i;
-#
-#                 /* Header */
-#                 nk_style_push_vec2(ctx, &ctx->style.window.spacing, nk_vec2(0,0));
-#                 nk_style_push_float(ctx, &ctx->style.button.rounding, 0);
-#                 nk_layout_row_begin(ctx, NK_STATIC, 20, 3);
-#                 for (i = 0; i < 3; ++i) {
-#                     /* make sure button perfectly fits text */
-#                     const struct nk_user_font *f = ctx->style.font;
-#                     float text_width = f->width(f->userdata, f->height, names[i], nk_strlen(names[i]));
-#                     float widget_width = text_width + 3 * ctx->style.button.padding.x;
-#                     nk_layout_row_push(ctx, widget_width);
-#                     if (current_tab == i) {
-#                         /* active tab gets highlighted */
-#                         struct nk_style_item button_color = ctx->style.button.normal;
-#                         ctx->style.button.normal = ctx->style.button.active;
-#                         current_tab = nk_button_label(ctx, names[i]) ? i: current_tab;
-#                         ctx->style.button.normal = button_color;
-#                     } else current_tab = nk_button_label(ctx, names[i]) ? i: current_tab;
-#                 }
-#                 nk_style_pop_float(ctx);
-#
-#                 /* Body */
-#                 nk_layout_row_dynamic(ctx, 140, 1);
-#                 if (nk_group_begin(ctx, "Notebook", NK_WINDOW_BORDER))
-#                 {
-#                     nk_style_pop_vec2(ctx);
-#                     switch (current_tab) {
-#                     case CHART_LINE:
-#                         nk_layout_row_dynamic(ctx, 100, 1);
-#                         bounds = nk_widget_bounds(ctx);
-#                         if (nk_chart_begin_colored(ctx, NK_CHART_LINES, nk_rgb(255,0,0), nk_rgb(150,0,0), 32, 0.0f, 1.0f)) {
-#                             nk_chart_add_slot_colored(ctx, NK_CHART_LINES, nk_rgb(0,0,255), nk_rgb(0,0,150),32, -1.0f, 1.0f);
-#                             for (i = 0, id = 0; i < 32; ++i) {
-#                                 nk_chart_push_slot(ctx, (float)fabs(sin(id)), 0);
-#                                 nk_chart_push_slot(ctx, (float)cos(id), 1);
-#                                 id += step;
-#                             }
-#                         }
-#                         nk_chart_end(ctx);
-#                         break;
-#                     case CHART_HISTO:
-#                         nk_layout_row_dynamic(ctx, 100, 1);
-#                         bounds = nk_widget_bounds(ctx);
-#                         if (nk_chart_begin_colored(ctx, NK_CHART_COLUMN, nk_rgb(255,0,0), nk_rgb(150,0,0), 32, 0.0f, 1.0f)) {
-#                             for (i = 0, id = 0; i < 32; ++i) {
-#                                 nk_chart_push_slot(ctx, (float)fabs(sin(id)), 0);
-#                                 id += step;
-#                             }
-#                         }
-#                         nk_chart_end(ctx);
-#                         break;
-#                     case CHART_MIXED:
-#                         nk_layout_row_dynamic(ctx, 100, 1);
-#                         bounds = nk_widget_bounds(ctx);
-#                         if (nk_chart_begin_colored(ctx, NK_CHART_LINES, nk_rgb(255,0,0), nk_rgb(150,0,0), 32, 0.0f, 1.0f)) {
-#                             nk_chart_add_slot_colored(ctx, NK_CHART_LINES, nk_rgb(0,0,255), nk_rgb(0,0,150),32, -1.0f, 1.0f);
-#                             nk_chart_add_slot_colored(ctx, NK_CHART_COLUMN, nk_rgb(0,255,0), nk_rgb(0,150,0), 32, 0.0f, 1.0f);
-#                             for (i = 0, id = 0; i < 32; ++i) {
-#                                 nk_chart_push_slot(ctx, (float)fabs(sin(id)), 0);
-#                                 nk_chart_push_slot(ctx, (float)fabs(cos(id)), 1);
-#                                 nk_chart_push_slot(ctx, (float)fabs(sin(id)), 2);
-#                                 id += step;
-#                             }
-#                         }
-#                         nk_chart_end(ctx);
-#                         break;
-#                     }
-#                     nk_group_end(ctx);
-#                 } else nk_style_pop_vec2(ctx);
-#                 nk_tree_pop(ctx);
-#             }
-#
-#             if (nk_tree_push(ctx, NK_TREE_NODE, "Simple", NK_MINIMIZED))
-#             {
-#                 nk_layout_row_dynamic(ctx, 300, 2);
-#                 if (nk_group_begin(ctx, "Group_Without_Border", 0)) {
-#                     int i = 0;
-#                     char buffer[64];
-#                     nk_layout_row_static(ctx, 18, 150, 1);
-#                     for (i = 0; i < 64; ++i) {
-#                         sprintf(buffer, "0x%02x", i);
-#                         nk_labelf(ctx, NK_TEXT_LEFT, "%s: scrollable region", buffer);
-#                     }
-#                     nk_group_end(ctx);
-#                 }
-#                 if (nk_group_begin(ctx, "Group_With_Border", NK_WINDOW_BORDER)) {
-#                     int i = 0;
-#                     char buffer[64];
-#                     nk_layout_row_dynamic(ctx, 25, 2);
-#                     for (i = 0; i < 64; ++i) {
-#                         sprintf(buffer, "%08d", ((((i%7)*10)^32))+(64+(i%2)*2));
-#                         nk_button_label(ctx, buffer);
-#                     }
-#                     nk_group_end(ctx);
-#                 }
-#                 nk_tree_pop(ctx);
-#             }
-#
-#             if (nk_tree_push(ctx, NK_TREE_NODE, "Complex", NK_MINIMIZED))
-#             {
-#                 int i;
-#                 nk_layout_space_begin(ctx, NK_STATIC, 500, 64);
-#                 nk_layout_space_push(ctx, nk_rect(0,0,150,500));
-#                 if (nk_group_begin(ctx, "Group_left", NK_WINDOW_BORDER)) {
-#                     static int selected[32];
-#                     nk_layout_row_static(ctx, 18, 100, 1);
-#                     for (i = 0; i < 32; ++i)
-#                         nk_selectable_label(ctx, (selected[i]) ? "Selected": "Unselected", NK_TEXT_CENTERED, &selected[i]);
-#                     nk_group_end(ctx);
-#                 }
-#
-#                 nk_layout_space_push(ctx, nk_rect(160,0,150,240));
-#                 if (nk_group_begin(ctx, "Group_top", NK_WINDOW_BORDER)) {
-#                     nk_layout_row_dynamic(ctx, 25, 1);
-#                     nk_button_label(ctx, "#FFAA");
-#                     nk_button_label(ctx, "#FFBB");
-#                     nk_button_label(ctx, "#FFCC");
-#                     nk_button_label(ctx, "#FFDD");
-#                     nk_button_label(ctx, "#FFEE");
-#                     nk_button_label(ctx, "#FFFF");
-#                     nk_group_end(ctx);
-#                 }
-#
-#                 nk_layout_space_push(ctx, nk_rect(160,250,150,250));
-#                 if (nk_group_begin(ctx, "Group_buttom", NK_WINDOW_BORDER)) {
-#                     nk_layout_row_dynamic(ctx, 25, 1);
-#                     nk_button_label(ctx, "#FFAA");
-#                     nk_button_label(ctx, "#FFBB");
-#                     nk_button_label(ctx, "#FFCC");
-#                     nk_button_label(ctx, "#FFDD");
-#                     nk_button_label(ctx, "#FFEE");
-#                     nk_button_label(ctx, "#FFFF");
-#                     nk_group_end(ctx);
-#                 }
-#
-#                 nk_layout_space_push(ctx, nk_rect(320,0,150,150));
-#                 if (nk_group_begin(ctx, "Group_right_top", NK_WINDOW_BORDER)) {
-#                     static int selected[4];
-#                     nk_layout_row_static(ctx, 18, 100, 1);
-#                     for (i = 0; i < 4; ++i)
-#                         nk_selectable_label(ctx, (selected[i]) ? "Selected": "Unselected", NK_TEXT_CENTERED, &selected[i]);
-#                     nk_group_end(ctx);
-#                 }
-#
-#                 nk_layout_space_push(ctx, nk_rect(320,160,150,150));
-#                 if (nk_group_begin(ctx, "Group_right_center", NK_WINDOW_BORDER)) {
-#                     static int selected[4];
-#                     nk_layout_row_static(ctx, 18, 100, 1);
-#                     for (i = 0; i < 4; ++i)
-#                         nk_selectable_label(ctx, (selected[i]) ? "Selected": "Unselected", NK_TEXT_CENTERED, &selected[i]);
-#                     nk_group_end(ctx);
-#                 }
-#
-#                 nk_layout_space_push(ctx, nk_rect(320,320,150,150));
-#                 if (nk_group_begin(ctx, "Group_right_bottom", NK_WINDOW_BORDER)) {
-#                     static int selected[4];
-#                     nk_layout_row_static(ctx, 18, 100, 1);
-#                     for (i = 0; i < 4; ++i)
-#                         nk_selectable_label(ctx, (selected[i]) ? "Selected": "Unselected", NK_TEXT_CENTERED, &selected[i]);
-#                     nk_group_end(ctx);
-#                 }
-#                 nk_layout_space_end(ctx);
-#                 nk_tree_pop(ctx);
-#             }
-#
-#             if (nk_tree_push(ctx, NK_TREE_NODE, "Splitter", NK_MINIMIZED))
-#             {
-#                 const struct nk_input *in = &ctx->input;
-#                 nk_layout_row_static(ctx, 20, 320, 1);
-#                 nk_label(ctx, "Use slider and spinner to change tile size", NK_TEXT_LEFT);
-#                 nk_label(ctx, "Drag the space between tiles to change tile ratio", NK_TEXT_LEFT);
-#
-#                 if (nk_tree_push(ctx, NK_TREE_NODE, "Vertical", NK_MINIMIZED))
-#                 {
-#                     static float a = 100, b = 100, c = 100;
-#                     struct nk_rect bounds;
-#
-#                     float row_layout[5];
-#                     row_layout[0] = a;
-#                     row_layout[1] = 8;
-#                     row_layout[2] = b;
-#                     row_layout[3] = 8;
-#                     row_layout[4] = c;
-#
-#                     /* header */
-#                     nk_layout_row_static(ctx, 30, 100, 2);
-#                     nk_label(ctx, "left:", NK_TEXT_LEFT);
-#                     nk_slider_float(ctx, 10.0f, &a, 200.0f, 10.0f);
-#
-#                     nk_label(ctx, "middle:", NK_TEXT_LEFT);
-#                     nk_slider_float(ctx, 10.0f, &b, 200.0f, 10.0f);
-#
-#                     nk_label(ctx, "right:", NK_TEXT_LEFT);
-#                     nk_slider_float(ctx, 10.0f, &c, 200.0f, 10.0f);
-#
-#                     /* tiles */
-#                     nk_layout_row(ctx, NK_STATIC, 200, 5, row_layout);
-#
-#                     /* left space */
-#                     if (nk_group_begin(ctx, "left", NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-#                         nk_layout_row_dynamic(ctx, 25, 1);
-#                         nk_button_label(ctx, "#FFAA");
-#                         nk_button_label(ctx, "#FFBB");
-#                         nk_button_label(ctx, "#FFCC");
-#                         nk_button_label(ctx, "#FFDD");
-#                         nk_button_label(ctx, "#FFEE");
-#                         nk_button_label(ctx, "#FFFF");
-#                         nk_group_end(ctx);
-#                     }
-#
-#                     /* scaler */
-#                     bounds = nk_widget_bounds(ctx);
-#                     nk_spacing(ctx, 1);
-#                     if ((nk_input_is_mouse_hovering_rect(in, bounds) ||
-#                         nk_input_is_mouse_prev_hovering_rect(in, bounds)) &&
-#                         nk_input_is_mouse_down(in, NK_BUTTON_LEFT))
-#                     {
-#                         a = row_layout[0] + in->mouse.delta.x;
-#                         b = row_layout[2] - in->mouse.delta.x;
-#                     }
-#
-#                     /* middle space */
-#                     if (nk_group_begin(ctx, "center", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-#                         nk_layout_row_dynamic(ctx, 25, 1);
-#                         nk_button_label(ctx, "#FFAA");
-#                         nk_button_label(ctx, "#FFBB");
-#                         nk_button_label(ctx, "#FFCC");
-#                         nk_button_label(ctx, "#FFDD");
-#                         nk_button_label(ctx, "#FFEE");
-#                         nk_button_label(ctx, "#FFFF");
-#                         nk_group_end(ctx);
-#                     }
-#
-#                     /* scaler */
-#                     bounds = nk_widget_bounds(ctx);
-#                     nk_spacing(ctx, 1);
-#                     if ((nk_input_is_mouse_hovering_rect(in, bounds) ||
-#                         nk_input_is_mouse_prev_hovering_rect(in, bounds)) &&
-#                         nk_input_is_mouse_down(in, NK_BUTTON_LEFT))
-#                     {
-#                         b = (row_layout[2] + in->mouse.delta.x);
-#                         c = (row_layout[4] - in->mouse.delta.x);
-#                     }
-#
-#                     /* right space */
-#                     if (nk_group_begin(ctx, "right", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-#                         nk_layout_row_dynamic(ctx, 25, 1);
-#                         nk_button_label(ctx, "#FFAA");
-#                         nk_button_label(ctx, "#FFBB");
-#                         nk_button_label(ctx, "#FFCC");
-#                         nk_button_label(ctx, "#FFDD");
-#                         nk_button_label(ctx, "#FFEE");
-#                         nk_button_label(ctx, "#FFFF");
-#                         nk_group_end(ctx);
-#                     }
-#
-#                     nk_tree_pop(ctx);
-#                 }
-#
-#                 if (nk_tree_push(ctx, NK_TREE_NODE, "Horizontal", NK_MINIMIZED))
-#                 {
-#                     static float a = 100, b = 100, c = 100;
-#                     struct nk_rect bounds;
-#
-#                     /* header */
-#                     nk_layout_row_static(ctx, 30, 100, 2);
-#                     nk_label(ctx, "top:", NK_TEXT_LEFT);
-#                     nk_slider_float(ctx, 10.0f, &a, 200.0f, 10.0f);
-#
-#                     nk_label(ctx, "middle:", NK_TEXT_LEFT);
-#                     nk_slider_float(ctx, 10.0f, &b, 200.0f, 10.0f);
-#
-#                     nk_label(ctx, "bottom:", NK_TEXT_LEFT);
-#                     nk_slider_float(ctx, 10.0f, &c, 200.0f, 10.0f);
-#
-#                     /* top space */
-#                     nk_layout_row_dynamic(ctx, a, 1);
-#                     if (nk_group_begin(ctx, "top", NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_BORDER)) {
-#                         nk_layout_row_dynamic(ctx, 25, 3);
-#                         nk_button_label(ctx, "#FFAA");
-#                         nk_button_label(ctx, "#FFBB");
-#                         nk_button_label(ctx, "#FFCC");
-#                         nk_button_label(ctx, "#FFDD");
-#                         nk_button_label(ctx, "#FFEE");
-#                         nk_button_label(ctx, "#FFFF");
-#                         nk_group_end(ctx);
-#                     }
-#
-#                     /* scaler */
-#                     nk_layout_row_dynamic(ctx, 8, 1);
-#                     bounds = nk_widget_bounds(ctx);
-#                     nk_spacing(ctx, 1);
-#                     if ((nk_input_is_mouse_hovering_rect(in, bounds) ||
-#                         nk_input_is_mouse_prev_hovering_rect(in, bounds)) &&
-#                         nk_input_is_mouse_down(in, NK_BUTTON_LEFT))
-#                     {
-#                         a = a + in->mouse.delta.y;
-#                         b = b - in->mouse.delta.y;
-#                     }
-#
-#                     /* middle space */
-#                     nk_layout_row_dynamic(ctx, b, 1);
-#                     if (nk_group_begin(ctx, "middle", NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_BORDER)) {
-#                         nk_layout_row_dynamic(ctx, 25, 3);
-#                         nk_button_label(ctx, "#FFAA");
-#                         nk_button_label(ctx, "#FFBB");
-#                         nk_button_label(ctx, "#FFCC");
-#                         nk_button_label(ctx, "#FFDD");
-#                         nk_button_label(ctx, "#FFEE");
-#                         nk_button_label(ctx, "#FFFF");
-#                         nk_group_end(ctx);
-#                     }
-#
-#                     {
-#                         /* scaler */
-#                         nk_layout_row_dynamic(ctx, 8, 1);
-#                         bounds = nk_widget_bounds(ctx);
-#                         if ((nk_input_is_mouse_hovering_rect(in, bounds) ||
-#                             nk_input_is_mouse_prev_hovering_rect(in, bounds)) &&
-#                             nk_input_is_mouse_down(in, NK_BUTTON_LEFT))
-#                         {
-#                             b = b + in->mouse.delta.y;
-#                             c = c - in->mouse.delta.y;
-#                         }
-#                     }
-#
-#                     /* bottom space */
-#                     nk_layout_row_dynamic(ctx, c, 1);
-#                     if (nk_group_begin(ctx, "bottom", NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_BORDER)) {
-#                         nk_layout_row_dynamic(ctx, 25, 3);
-#                         nk_button_label(ctx, "#FFAA");
-#                         nk_button_label(ctx, "#FFBB");
-#                         nk_button_label(ctx, "#FFCC");
-#                         nk_button_label(ctx, "#FFDD");
-#                         nk_button_label(ctx, "#FFEE");
-#                         nk_button_label(ctx, "#FFFF");
-#                         nk_group_end(ctx);
-#                     }
-#                     nk_tree_pop(ctx);
-#                 }
-#                 nk_tree_pop(ctx);
-#             }
-#             nk_tree_pop(ctx);
-#         }
-#     }
-#     nk_end(ctx);
-#     return !nk_window_is_closed(ctx, "Overview");
-# }
-#
+                    self.declare("current_tab", 0, "int*")
+                    item_padding = pynk.ffi.new("struct nk_vec2*")
+                    bounds = pynk.ffi.new("struct nk_rect*")
+                    step = (2*3.141592654) / 32
+                    CHART_LINE = 0
+                    CHART_HISTO = 1
+                    CHART_MIXED = 2
+                    names = ["Lines", "Columns", "Mixed"]
+                    id = 0
+
+                    #
+                    # /* Header */
+                    # nk_style_push_vec2(ctx, &ctx->style.window.spacing, nk_vec2(0,0));
+                    # nk_style_push_float(ctx, &ctx->style.button.rounding, 0);
+                    # nk_layout_row_begin(ctx, NK_STATIC, 20, 3);
+                    # for (i = 0; i < 3; ++i) {
+                    #     /* make sure button perfectly fits text */
+                    #     const struct nk_user_font *f = ctx->style.font;
+                    #     float text_width = f->width(f->userdata, f->height, names[i], nk_strlen(names[i]));
+                    #     float widget_width = text_width + 3 * ctx->style.button.padding.x;
+                    #     nk_layout_row_push(ctx, widget_width);
+                    #     if (current_tab == i) {
+                    #         /* active tab gets highlighted */
+                    #         struct nk_style_item button_color = ctx->style.button.normal;
+                    #         ctx->style.button.normal = ctx->style.button.active;
+                    #         current_tab = nk_button_label(ctx, names[i]) ? i: current_tab;
+                    #         ctx->style.button.normal = button_color;
+                    #     } else current_tab = nk_button_label(ctx, names[i]) ? i: current_tab;
+                    # }
+                    # nk_style_pop_float(ctx);
+                    pynk.lib.nk_style_push_vec2(ctx, ctx.style.window.spacing, pynk.lib.nk_vec2(0,0));
+                    pynk.lib.nk_style_push_float(ctx, ctx.style.button.rounding, 0);
+                    pynk.lib.nk_layout_row_begin(ctx, pynk.lib.NK_STATIC, 20, 3);
+                    for i in xrange(3):
+                        #/* make sure button perfectly fits text */
+                        f = ctx.style.font;
+                        text_width = f.width(f.userdata, f.height, names[i], pynk.lib.nk_strlen(names[i]));
+                        widget_width = text_width + 3 * ctx.style.button.padding.x;
+                        pynk.lib.nk_layout_row_push(ctx, widget_width);
+                        if self.current_tab[0] == i:
+                            #/* active tab gets highlighted */
+                            button_color = ctx.style.button.normal;
+                            ctx.style.button.normal = ctx.style.button.active;
+                            self.current_tab[0] = i if pynk.lib.nk_button_label(ctx, names[i]) else self.current_tab[0];
+                            ctx.style.button.normal = button_color;
+                        else:
+                            self.current_tab[0] = i if pynk.lib.nk_button_label(ctx, names[i]) else self.current_tab[0];
+                    pynk.lib.nk_style_pop_float(ctx);
+                    #
+                    # /* Body */
+                    # nk_layout_row_dynamic(ctx, 140, 1);
+                    # if (nk_group_begin(ctx, "Notebook", NK_WINDOW_BORDER))
+                    # {
+                    #     nk_style_pop_vec2(ctx);
+                    #     switch (current_tab) {
+                    #     case CHART_LINE:
+                    #         nk_layout_row_dynamic(ctx, 100, 1);
+                    #         bounds = nk_widget_bounds(ctx);
+                    #         if (nk_chart_begin_colored(ctx, NK_CHART_LINES, nk_rgb(255,0,0), nk_rgb(150,0,0), 32, 0.0f, 1.0f)) {
+                    #             nk_chart_add_slot_colored(ctx, NK_CHART_LINES, nk_rgb(0,0,255), nk_rgb(0,0,150),32, -1.0f, 1.0f);
+                    #             for (i = 0, id = 0; i < 32; ++i) {
+                    #                 nk_chart_push_slot(ctx, (float)fabs(sin(id)), 0);
+                    #                 nk_chart_push_slot(ctx, (float)cos(id), 1);
+                    #                 id += step;
+                    #             }
+                    #         }
+                    #         nk_chart_end(ctx);
+                    #         break;
+                    #     case CHART_HISTO:
+                    #         nk_layout_row_dynamic(ctx, 100, 1);
+                    #         bounds = nk_widget_bounds(ctx);
+                    #         if (nk_chart_begin_colored(ctx, NK_CHART_COLUMN, nk_rgb(255,0,0), nk_rgb(150,0,0), 32, 0.0f, 1.0f)) {
+                    #             for (i = 0, id = 0; i < 32; ++i) {
+                    #                 nk_chart_push_slot(ctx, (float)fabs(sin(id)), 0);
+                    #                 id += step;
+                    #             }
+                    #         }
+                    #         nk_chart_end(ctx);
+                    #         break;
+                    #     case CHART_MIXED:
+                    #         nk_layout_row_dynamic(ctx, 100, 1);
+                    #         bounds = nk_widget_bounds(ctx);
+                    #         if (nk_chart_begin_colored(ctx, NK_CHART_LINES, nk_rgb(255,0,0), nk_rgb(150,0,0), 32, 0.0f, 1.0f)) {
+                    #             nk_chart_add_slot_colored(ctx, NK_CHART_LINES, nk_rgb(0,0,255), nk_rgb(0,0,150),32, -1.0f, 1.0f);
+                    #             nk_chart_add_slot_colored(ctx, NK_CHART_COLUMN, nk_rgb(0,255,0), nk_rgb(0,150,0), 32, 0.0f, 1.0f);
+                    #             for (i = 0, id = 0; i < 32; ++i) {
+                    #                 nk_chart_push_slot(ctx, (float)fabs(sin(id)), 0);
+                    #                 nk_chart_push_slot(ctx, (float)fabs(cos(id)), 1);
+                    #                 nk_chart_push_slot(ctx, (float)fabs(sin(id)), 2);
+                    #                 id += step;
+                    #             }
+                    #         }
+                    #         nk_chart_end(ctx);
+                    #         break;
+                    #     }
+                    #     nk_group_end(ctx);
+                    # } else nk_style_pop_vec2(ctx);
+                    # nk_tree_pop(ctx);
+                    pynk.lib.nk_layout_row_dynamic(ctx, 140, 1);
+                    if pynk.lib.nk_group_begin(ctx, "Notebook", pynk.lib.NK_WINDOW_BORDER):
+                        pynk.lib.nk_style_pop_vec2(ctx);
+                        if self.current_tab[0] == CHART_LINE:
+                            pynk.lib.nk_layout_row_dynamic(ctx, 100, 1);
+                            bounds = pynk.lib.nk_widget_bounds(ctx);
+                            if pynk.lib.nk_chart_begin_colored(ctx, pynk.lib.NK_CHART_LINES, pynk.lib.nk_rgb(255,0,0), pynk.lib.nk_rgb(150,0,0), 32, 0.0, 1.0):
+                                pynk.lib.nk_chart_add_slot_colored(ctx, pynk.lib.NK_CHART_LINES, pynk.lib.nk_rgb(0,0,255), pynk.lib.nk_rgb(0,0,150),32, -1.0, 1.0);
+                                id = 0
+                                for i in xrange(32):
+                                    pynk.lib.nk_chart_push_slot(ctx, math.fabs(math.sin(id)), 0);
+                                    pynk.lib.nk_chart_push_slot(ctx, math.cos(id), 1);
+                                    id += step;
+                                pynk.lib.nk_chart_end(ctx);
+                        elif self.current_tab[0] == CHART_HISTO:
+                            pynk.lib.nk_layout_row_dynamic(ctx, 100, 1);
+                            bounds = pynk.lib.nk_widget_bounds(ctx);
+                            if pynk.lib.nk_chart_begin_colored(ctx, pynk.lib.NK_CHART_COLUMN, pynk.lib.nk_rgb(255,0,0), pynk.lib.nk_rgb(150,0,0), 32, 0.0, 1.0):
+                                id = 0
+                                for i in xrange(32):
+                                    pynk.lib.nk_chart_push_slot(ctx, math.fabs(math.sin(id)), 0);
+                                    id += step;
+                                pynk.lib.nk_chart_end(ctx);
+                        elif self.current_tab[0] == CHART_MIXED:
+                            pynk.lib.nk_layout_row_dynamic(ctx, 100, 1);
+                            bounds = pynk.lib.nk_widget_bounds(ctx);
+                            if pynk.lib.nk_chart_begin_colored(ctx, pynk.lib.NK_CHART_LINES, pynk.lib.nk_rgb(255,0,0), pynk.lib.nk_rgb(150,0,0), 32, 0.0, 1.0):
+                                pynk.lib.nk_chart_add_slot_colored(ctx, pynk.lib.NK_CHART_LINES, pynk.lib.nk_rgb(0,0,255), pynk.lib.nk_rgb(0,0,150),32, -1.0, 1.0);
+                                pynk.lib.nk_chart_add_slot_colored(ctx, pynk.lib.NK_CHART_COLUMN, pynk.lib.nk_rgb(0,255,0), pynk.lib.nk_rgb(0,150,0), 32, 0.0, 1.0);
+                                id = 0
+                                for i in xrange(32):
+                                    pynk.lib.nk_chart_push_slot(ctx, math.fabs(math.sin(id)), 0);
+                                    pynk.lib.nk_chart_push_slot(ctx, math.fabs(math.cos(id)), 1);
+                                    pynk.lib.nk_chart_push_slot(ctx, math.fabs(math.sin(id)), 2);
+                                    id += step;
+                            pynk.lib.nk_chart_end(ctx);
+                        pynk.lib.nk_group_end(ctx);
+                    else:
+                        pynk.lib.nk_style_pop_vec2(ctx);
+                    pynk.lib.nk_tree_pop(ctx);
+                # }
+                #
+                # if (nk_tree_push(ctx, NK_TREE_NODE, "Simple", NK_MINIMIZED))
+                # {
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Simple", pynk.lib.NK_MINIMIZED, "17"):
+                    # nk_layout_row_dynamic(ctx, 300, 2);
+                    # if (nk_group_begin(ctx, "Group_Without_Border", 0)) {
+                    #     int i = 0;
+                    #     char buffer[64];
+                    #     nk_layout_row_static(ctx, 18, 150, 1);
+                    #     for (i = 0; i < 64; ++i) {
+                    #         sprintf(buffer, "0x%02x", i);
+                    #         nk_labelf(ctx, NK_TEXT_LEFT, "%s: scrollable region", buffer);
+                    #     }
+                    #     nk_group_end(ctx);
+                    # }
+                    # if (nk_group_begin(ctx, "Group_With_Border", NK_WINDOW_BORDER)) {
+                    #     int i = 0;
+                    #     char buffer[64];
+                    #     nk_layout_row_dynamic(ctx, 25, 2);
+                    #     for (i = 0; i < 64; ++i) {
+                    #         sprintf(buffer, "%08d", ((((i%7)*10)^32))+(64+(i%2)*2));
+                    #         nk_button_label(ctx, buffer);
+                    #     }
+                    #     nk_group_end(ctx);
+                    # }
+                    # nk_tree_pop(ctx);
+                    pynk.lib.nk_layout_row_dynamic(ctx, 300, 2);
+                    if pynk.lib.nk_group_begin(ctx, "Group_Without_Border", 0):
+                        pynk.lib.nk_layout_row_static(ctx, 18, 150, 1);
+                        for i in xrange(64):
+                            pynk.lib.nk_labelf(ctx, pynk.lib.NK_TEXT_LEFT, "%s: scrollable region", str(i));
+                        pynk.lib.nk_group_end(ctx);
+                    if pynk.lib.nk_group_begin(ctx, "Group_With_Border", pynk.lib.NK_WINDOW_BORDER):
+                        pynk.lib.nk_layout_row_dynamic(ctx, 25, 2);
+                        for i in xrange(64):
+                            pynk.lib.nk_button_label(ctx, str(((((i%7)*10)^32))+(64+(i%2)*2)));
+                        pynk.lib.nk_group_end(ctx);
+                    pynk.lib.nk_tree_pop(ctx);
+                # }
+                #
+                # if (nk_tree_push(ctx, NK_TREE_NODE, "Complex", NK_MINIMIZED))
+                # {
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Complex", pynk.lib.NK_MINIMIZED, "18"):
+                    # int i;
+                    # nk_layout_space_begin(ctx, NK_STATIC, 500, 64);
+                    # nk_layout_space_push(ctx, nk_rect(0,0,150,500));
+                    # if (nk_group_begin(ctx, "Group_left", NK_WINDOW_BORDER)) {
+                    #     static int selected[32];
+                    #     nk_layout_row_static(ctx, 18, 100, 1);
+                    #     for (i = 0; i < 32; ++i)
+                    #         nk_selectable_label(ctx, (selected[i]) ? "Selected": "Unselected", NK_TEXT_CENTERED, &selected[i]);
+                    #     nk_group_end(ctx);
+                    # }
+                    pynk.lib.nk_layout_space_begin(ctx, pynk.lib.NK_STATIC, 500, 64);
+                    pynk.lib.nk_layout_space_push(ctx, pynk.lib.nk_rect(0,0,150,500));
+                    if pynk.lib.nk_group_begin(ctx, "Group_left", pynk.lib.NK_WINDOW_BORDER):
+                        self.declare("selected", [0]*32, "int[]")
+                        pynk.lib.nk_layout_row_static(ctx, 18, 100, 1);
+                        for i in xrange(32):
+                            pynk.lib.nk_selectable_label(ctx, "Selected" if self.selected[i] else "Unselected", pynk.lib.NK_TEXT_CENTERED, self.selected+i);
+                        pynk.lib.nk_group_end(ctx);
+                    #
+                    # nk_layout_space_push(ctx, nk_rect(160,0,150,240));
+                    # if (nk_group_begin(ctx, "Group_top", NK_WINDOW_BORDER)) {
+                    #     nk_layout_row_dynamic(ctx, 25, 1);
+                    #     nk_button_label(ctx, "#FFAA");
+                    #     nk_button_label(ctx, "#FFBB");
+                    #     nk_button_label(ctx, "#FFCC");
+                    #     nk_button_label(ctx, "#FFDD");
+                    #     nk_button_label(ctx, "#FFEE");
+                    #     nk_button_label(ctx, "#FFFF");
+                    #     nk_group_end(ctx);
+                    # }
+                    pynk.lib.nk_layout_space_push(ctx, pynk.lib.nk_rect(160,0,150,240));
+                    if pynk.lib.nk_group_begin(ctx, "Group_top", pynk.lib.NK_WINDOW_BORDER):
+                        pynk.lib.nk_layout_row_dynamic(ctx, 25, 1);
+                        pynk.lib.nk_button_label(ctx, "#FFAA");
+                        pynk.lib.nk_button_label(ctx, "#FFBB");
+                        pynk.lib.nk_button_label(ctx, "#FFCC");
+                        pynk.lib.nk_button_label(ctx, "#FFDD");
+                        pynk.lib.nk_button_label(ctx, "#FFEE");
+                        pynk.lib.nk_button_label(ctx, "#FFFF");
+                        pynk.lib.nk_group_end(ctx);
+                    #
+                    # nk_layout_space_push(ctx, nk_rect(160,250,150,250));
+                    # if (nk_group_begin(ctx, "Group_buttom", NK_WINDOW_BORDER)) {
+                    #     nk_layout_row_dynamic(ctx, 25, 1);
+                    #     nk_button_label(ctx, "#FFAA");
+                    #     nk_button_label(ctx, "#FFBB");
+                    #     nk_button_label(ctx, "#FFCC");
+                    #     nk_button_label(ctx, "#FFDD");
+                    #     nk_button_label(ctx, "#FFEE");
+                    #     nk_button_label(ctx, "#FFFF");
+                    #     nk_group_end(ctx);
+                    # }
+                    pynk.lib.nk_layout_space_push(ctx, pynk.lib.nk_rect(160,250,150,250));
+                    if pynk.lib.nk_group_begin(ctx, "Group_buttom", pynk.lib.NK_WINDOW_BORDER):
+                        pynk.lib.nk_layout_row_dynamic(ctx, 25, 1);
+                        pynk.lib.nk_button_label(ctx, "#FFAA");
+                        pynk.lib.nk_button_label(ctx, "#FFBB");
+                        pynk.lib.nk_button_label(ctx, "#FFCC");
+                        pynk.lib.nk_button_label(ctx, "#FFDD");
+                        pynk.lib.nk_button_label(ctx, "#FFEE");
+                        pynk.lib.nk_button_label(ctx, "#FFFF");
+                        pynk.lib.nk_group_end(ctx);
+                    #
+                    # nk_layout_space_push(ctx, nk_rect(320,0,150,150));
+                    # if (nk_group_begin(ctx, "Group_right_top", NK_WINDOW_BORDER)) {
+                    #     static int selected[4];
+                    #     nk_layout_row_static(ctx, 18, 100, 1);
+                    #     for (i = 0; i < 4; ++i)
+                    #         nk_selectable_label(ctx, (selected[i]) ? "Selected": "Unselected", NK_TEXT_CENTERED, &selected[i]);
+                    #     nk_group_end(ctx);
+                    # }
+                    pynk.lib.nk_layout_space_push(ctx, pynk.lib.nk_rect(320,0,150,150));
+                    if pynk.lib.nk_group_begin(ctx, "Group_right_top", pynk.lib.NK_WINDOW_BORDER):
+                        self.declare("selected", [0]*4, "int[]")
+                        pynk.lib.nk_layout_row_static(ctx, 18, 100, 1);
+                        for i in xrange(4):
+                            pynk.lib.nk_selectable_label(ctx, "Selected" if self.selected[i] else "Unselected", pynk.lib.NK_TEXT_CENTERED, self.selected+i);
+                        pynk.lib.nk_group_end(ctx);
+                    #
+                    # nk_layout_space_push(ctx, nk_rect(320,160,150,150));
+                    # if (nk_group_begin(ctx, "Group_right_center", NK_WINDOW_BORDER)) {
+                    #     static int selected[4];
+                    #     nk_layout_row_static(ctx, 18, 100, 1);
+                    #     for (i = 0; i < 4; ++i)
+                    #         nk_selectable_label(ctx, (selected[i]) ? "Selected": "Unselected", NK_TEXT_CENTERED, &selected[i]);
+                    #     nk_group_end(ctx);
+                    # }
+                    pynk.lib.nk_layout_space_push(ctx, pynk.lib.nk_rect(320,160,150,150));
+                    if pynk.lib.nk_group_begin(ctx, "Group_right_center", pynk.lib.NK_WINDOW_BORDER):
+                        self.declare("selected", [0]*4, "int[]")
+                        pynk.lib.nk_layout_row_static(ctx, 18, 100, 1);
+                        for i in xrange(4):
+                            pynk.lib.nk_selectable_label(ctx, "Selected" if self.selected[i] else "Unselected", pynk.lib.NK_TEXT_CENTERED, self.selected+i);
+                        pynk.lib.nk_group_end(ctx);
+                    #
+                    # nk_layout_space_push(ctx, nk_rect(320,320,150,150));
+                    # if (nk_group_begin(ctx, "Group_right_bottom", NK_WINDOW_BORDER)) {
+                    #     static int selected[4];
+                    #     nk_layout_row_static(ctx, 18, 100, 1);
+                    #     for (i = 0; i < 4; ++i)
+                    #         nk_selectable_label(ctx, (selected[i]) ? "Selected": "Unselected", NK_TEXT_CENTERED, &selected[i]);
+                    #     nk_group_end(ctx);
+                    # }
+                    # nk_layout_space_end(ctx);
+                    # nk_tree_pop(ctx);
+                    pynk.lib.nk_layout_space_push(ctx, pynk.lib.nk_rect(320,320,150,150));
+                    if pynk.lib.nk_group_begin(ctx, "Group_right_bottom", pynk.lib.NK_WINDOW_BORDER):
+                        self.declare("selected", [0]*4, "int[]")
+                        pynk.lib.nk_layout_row_static(ctx, 18, 100, 1);
+                        for i in xrange(4):
+                            pynk.lib.nk_selectable_label(ctx, "Selected" if self.selected[i] else "Unselected", pynk.lib.NK_TEXT_CENTERED, self.selected+i);
+                        pynk.lib.nk_group_end(ctx);
+                    pynk.lib.nk_layout_space_end(ctx);
+                    pynk.lib.nk_tree_pop(ctx);
+                # }
+                #
+                # if (nk_tree_push(ctx, NK_TREE_NODE, "Splitter", NK_MINIMIZED))
+                # {
+                if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Splitter", pynk.lib.NK_MINIMIZED, "20"):
+                    # const struct nk_input *in = &ctx->input;
+                    # nk_layout_row_static(ctx, 20, 320, 1);
+                    # nk_label(ctx, "Use slider and spinner to change tile size", NK_TEXT_LEFT);
+                    # nk_label(ctx, "Drag the space between tiles to change tile ratio", NK_TEXT_LEFT);
+                    pynk.lib.nk_layout_row_static(ctx, 20, 320, 1);
+                    pynk.lib.nk_label(ctx, "Use slider and spinner to change tile size", pynk.lib.NK_TEXT_LEFT);
+                    pynk.lib.nk_label(ctx, "Drag the space between tiles to change tile ratio", pynk.lib.NK_TEXT_LEFT);
+                    #
+                    # if (nk_tree_push(ctx, NK_TREE_NODE, "Vertical", NK_MINIMIZED))
+                    # {
+                    if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Vertical", pynk.lib.NK_MINIMIZED, "21"):
+                        # static float a = 100, b = 100, c = 100;
+                        self.declare("a", 100, "float*")
+                        self.declare("b", 100, "float*")
+                        self.declare("c", 100, "float*")
+
+                        # struct nk_rect bounds;
+                        #
+                        # float row_layout[5];
+                        # row_layout[0] = a;
+                        # row_layout[1] = 8;
+                        # row_layout[2] = b;
+                        # row_layout[3] = 8;
+                        # row_layout[4] = c;
+                        bounds = pynk.ffi.new("struct nk_rect*")
+                        row_layout = pynk.ffi.new("float[5]")
+                        row_layout[0] = self.a[0];
+                        row_layout[1] = 8;
+                        row_layout[2] = self.b[0];
+                        row_layout[3] = 8;
+                        row_layout[4] = self.c[0];
+                        #
+                        # /* header */
+                        # nk_layout_row_static(ctx, 30, 100, 2);
+                        # nk_label(ctx, "left:", NK_TEXT_LEFT);
+                        # nk_slider_float(ctx, 10.0f, &a, 200.0f, 10.0f);
+                        #
+                        # nk_label(ctx, "middle:", NK_TEXT_LEFT);
+                        # nk_slider_float(ctx, 10.0f, &b, 200.0f, 10.0f);
+                        #
+                        # nk_label(ctx, "right:", NK_TEXT_LEFT);
+                        # nk_slider_float(ctx, 10.0f, &c, 200.0f, 10.0f);
+
+                        pynk.lib.nk_layout_row_static(ctx, 30, 100, 2);
+                        pynk.lib.nk_label(ctx, "left:", pynk.lib.NK_TEXT_LEFT);
+                        pynk.lib.nk_slider_float(ctx, 10.0, self.a, 200.0, 10.0);
+                        pynk.lib.nk_label(ctx, "middle:", pynk.lib.NK_TEXT_LEFT);
+                        pynk.lib.nk_slider_float(ctx, 10.0, self.b, 200.0, 10.0);
+                        pynk.lib.nk_label(ctx, "right:", pynk.lib.NK_TEXT_LEFT);
+                        pynk.lib.nk_slider_float(ctx, 10.0, self.c, 200.0, 10.0);
+
+
+
+                        # /* tiles */
+                        # nk_layout_row(ctx, NK_STATIC, 200, 5, row_layout);
+                        pynk.lib.nk_layout_row(ctx, pynk.lib.NK_STATIC, 200, 5, row_layout);
+                        #
+                        # /* left space */
+                        # if (nk_group_begin(ctx, "left", NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+                        #     nk_layout_row_dynamic(ctx, 25, 1);
+                        #     nk_button_label(ctx, "#FFAA");
+                        #     nk_button_label(ctx, "#FFBB");
+                        #     nk_button_label(ctx, "#FFCC");
+                        #     nk_button_label(ctx, "#FFDD");
+                        #     nk_button_label(ctx, "#FFEE");
+                        #     nk_button_label(ctx, "#FFFF");
+                        #     nk_group_end(ctx);
+                        # }
+                        if pynk.lib.nk_group_begin(ctx, "left", pynk.lib.NK_WINDOW_NO_SCROLLBAR|pynk.lib.NK_WINDOW_BORDER|pynk.lib.NK_WINDOW_NO_SCROLLBAR):
+                            pynk.lib.nk_layout_row_dynamic(ctx, 25, 1);
+                            pynk.lib.nk_button_label(ctx, "#FFAA");
+                            pynk.lib.nk_button_label(ctx, "#FFBB");
+                            pynk.lib.nk_button_label(ctx, "#FFCC");
+                            pynk.lib.nk_button_label(ctx, "#FFDD");
+                            pynk.lib.nk_button_label(ctx, "#FFEE");
+                            pynk.lib.nk_button_label(ctx, "#FFFF");
+                            pynk.lib.nk_group_end(ctx);
+                        #
+                        # /* scaler */
+                        # bounds = nk_widget_bounds(ctx);
+                        # nk_spacing(ctx, 1);
+                        # if ((nk_input_is_mouse_hovering_rect(in, bounds) ||
+                        #     nk_input_is_mouse_prev_hovering_rect(in, bounds)) &&
+                        #     nk_input_is_mouse_down(in, NK_BUTTON_LEFT))
+                        # {
+                        #     a = row_layout[0] + in->mouse.delta.x;
+                        #     b = row_layout[2] - in->mouse.delta.x;
+                        # }
+                        bounds = pynk.lib.nk_widget_bounds(ctx);
+                        pynk.lib.nk_spacing(ctx, 1);
+                        if (pynk.lib.nk_input_is_mouse_hovering_rect(ctx.input, bounds) or
+                                pynk.lib.nk_input_is_mouse_prev_hovering_rect(ctx.input, bounds)) and \
+                                pynk.lib.nk_input_is_mouse_down(ctx.input, pynk.lib.NK_BUTTON_LEFT):
+                            self.a[0] = row_layout[0] + ctx.input.mouse.delta.x;
+                            self.b[0] = row_layout[2] - ctx.input.mouse.delta.x;
+                        #
+                        # /* middle space */
+                        # if (nk_group_begin(ctx, "center", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+                        #     nk_layout_row_dynamic(ctx, 25, 1);
+                        #     nk_button_label(ctx, "#FFAA");
+                        #     nk_button_label(ctx, "#FFBB");
+                        #     nk_button_label(ctx, "#FFCC");
+                        #     nk_button_label(ctx, "#FFDD");
+                        #     nk_button_label(ctx, "#FFEE");
+                        #     nk_button_label(ctx, "#FFFF");
+                        #     nk_group_end(ctx);
+                        # }
+                        if pynk.lib.nk_group_begin(ctx, "center", pynk.lib.NK_WINDOW_BORDER|pynk.lib.NK_WINDOW_NO_SCROLLBAR):
+                            pynk.lib.nk_layout_row_dynamic(ctx, 25, 1);
+                            pynk.lib.nk_button_label(ctx, "#FFAA");
+                            pynk.lib.nk_button_label(ctx, "#FFBB");
+                            pynk.lib.nk_button_label(ctx, "#FFCC");
+                            pynk.lib.nk_button_label(ctx, "#FFDD");
+                            pynk.lib.nk_button_label(ctx, "#FFEE");
+                            pynk.lib.nk_button_label(ctx, "#FFFF");
+                            pynk.lib.nk_group_end(ctx);
+                            #
+                            # /* scaler */
+                            # bounds = nk_widget_bounds(ctx);
+                            # nk_spacing(ctx, 1);
+                            # if ((nk_input_is_mouse_hovering_rect(in, bounds) ||
+                            #     nk_input_is_mouse_prev_hovering_rect(in, bounds)) &&
+                            #     nk_input_is_mouse_down(in, NK_BUTTON_LEFT))
+                            # {
+                            #     b = (row_layout[2] + in->mouse.delta.x);
+                            #     c = (row_layout[4] - in->mouse.delta.x);
+                            # }
+                            bounds = pynk.lib.nk_widget_bounds(ctx);
+                            pynk.lib.nk_spacing(ctx, 1);
+                            if (pynk.lib.nk_input_is_mouse_hovering_rect(ctx.input, bounds) or
+                                    pynk.lib.nk_input_is_mouse_prev_hovering_rect(ctx.input, bounds)) and \
+                                    pynk.lib.nk_input_is_mouse_down(ctx.input, pynk.lib.NK_BUTTON_LEFT):
+                                self.b[0] = (row_layout[2] + ctx.input.mouse.delta.x);
+                                self.c[0] = (row_layout[4] - ctx.input.mouse.delta.x);
+                            #
+                            # /* right space */
+                            # if (nk_group_begin(ctx, "right", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+                            #     nk_layout_row_dynamic(ctx, 25, 1);
+                            #     nk_button_label(ctx, "#FFAA");
+                            #     nk_button_label(ctx, "#FFBB");
+                            #     nk_button_label(ctx, "#FFCC");
+                            #     nk_button_label(ctx, "#FFDD");
+                            #     nk_button_label(ctx, "#FFEE");
+                            #     nk_button_label(ctx, "#FFFF");
+                            #     nk_group_end(ctx);
+                            # }
+                            #
+                            # nk_tree_pop(ctx);
+                            if pynk.lib.nk_group_begin(ctx, "right", pynk.lib.NK_WINDOW_BORDER|pynk.lib.NK_WINDOW_NO_SCROLLBAR):
+                                pynk.lib.nk_layout_row_dynamic(ctx, 25, 1);
+                                pynk.lib.nk_button_label(ctx, "#FFAA");
+                                pynk.lib.nk_button_label(ctx, "#FFBB");
+                                pynk.lib.nk_button_label(ctx, "#FFCC");
+                                pynk.lib.nk_button_label(ctx, "#FFDD");
+                                pynk.lib.nk_button_label(ctx, "#FFEE");
+                                pynk.lib.nk_button_label(ctx, "#FFFF");
+                                pynk.lib.nk_group_end(ctx);
+                            pynk.lib.nk_tree_pop(ctx);
+                        # }
+                        #
+                        # if (nk_tree_push(ctx, NK_TREE_NODE, "Horizontal", NK_MINIMIZED))
+                        # {
+                        if self.tree_push(ctx, pynk.lib.NK_TREE_NODE, "Horizontal", pynk.lib.NK_MINIMIZED, "24"):
+                            # static float a = 100, b = 100, c = 100;
+                            # struct nk_rect bounds;
+                            bounds = pynk.ffi.new("struct nk_rect*")
+                            #
+                            # /* header */
+                            # nk_layout_row_static(ctx, 30, 100, 2);
+                            # nk_label(ctx, "top:", NK_TEXT_LEFT);
+                            # nk_slider_float(ctx, 10.0f, &a, 200.0f, 10.0f);
+                            #
+                            # nk_label(ctx, "middle:", NK_TEXT_LEFT);
+                            # nk_slider_float(ctx, 10.0f, &b, 200.0f, 10.0f);
+                            #
+                            # nk_label(ctx, "bottom:", NK_TEXT_LEFT);
+                            # nk_slider_float(ctx, 10.0f, &c, 200.0f, 10.0f);
+                            pynk.lib.nk_layout_row_static(ctx, 30, 100, 2);
+                            pynk.lib.nk_label(ctx, "top:", pynk.lib.NK_TEXT_LEFT);
+                            pynk.lib.nk_slider_float(ctx, 10.0, self.a, 200.0, 10.0);
+                            pynk.lib.nk_label(ctx, "middle:", pynk.lib.NK_TEXT_LEFT);
+                            pynk.lib.nk_slider_float(ctx, 10.0, self.b, 200.0, 10.0);
+                            pynk.lib.nk_label(ctx, "bottom:", pynk.lib.NK_TEXT_LEFT);
+                            pynk.lib.nk_slider_float(ctx, 10.0, self.c, 200.0, 10.0);
+                            #
+                            # /* top space */
+                            # nk_layout_row_dynamic(ctx, a, 1);
+                            # if (nk_group_begin(ctx, "top", NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_BORDER)) {
+                            #     nk_layout_row_dynamic(ctx, 25, 3);
+                            #     nk_button_label(ctx, "#FFAA");
+                            #     nk_button_label(ctx, "#FFBB");
+                            #     nk_button_label(ctx, "#FFCC");
+                            #     nk_button_label(ctx, "#FFDD");
+                            #     nk_button_label(ctx, "#FFEE");
+                            #     nk_button_label(ctx, "#FFFF");
+                            #     nk_group_end(ctx);
+                            # }
+                            pynk.lib.nk_layout_row_dynamic(ctx, self.a, 1);
+                            if pynk.lib.nk_group_begin(ctx, "top", pynk.lib.NK_WINDOW_NO_SCROLLBAR|pynk.lib.NK_WINDOW_BORDER):
+                                pynk.lib.nk_layout_row_dynamic(ctx, 25, 3);
+                                pynk.lib.nk_button_label(ctx, "#FFAA");
+                                pynk.lib.nk_button_label(ctx, "#FFBB");
+                                pynk.lib.nk_button_label(ctx, "#FFCC");
+                                pynk.lib.nk_button_label(ctx, "#FFDD");
+                                pynk.lib.nk_button_label(ctx, "#FFEE");
+                                pynk.lib.nk_button_label(ctx, "#FFFF");
+                                pynk.lib.nk_group_end(ctx);
+
+                            #
+                            # /* scaler */
+                            # nk_layout_row_dynamic(ctx, 8, 1);
+                            # bounds = nk_widget_bounds(ctx);
+                            # nk_spacing(ctx, 1);
+                            # if ((nk_input_is_mouse_hovering_rect(in, bounds) ||
+                            #     nk_input_is_mouse_prev_hovering_rect(in, bounds)) &&
+                            #     nk_input_is_mouse_down(in, NK_BUTTON_LEFT))
+                            # {
+                            #     a = a + in->mouse.delta.y;
+                            #     b = b - in->mouse.delta.y;
+                            # }
+                            pynk.lib.nk_layout_row_dynamic(ctx, 8, 1)
+                            bounds = pynk.lib.nk_widget_bounds(ctx);
+                            pynk.lib.nk_spacing(ctx, 1);
+                            if (pynk.lib.nk_input_is_mouse_hovering_rect(
+                                    ctx.input, bounds) or
+                                    pynk.lib.nk_input_is_mouse_prev_hovering_rect(
+                                        ctx.input, bounds)) and \
+                                    pynk.lib.nk_input_is_mouse_down(ctx.input,
+                                                                    pynk.lib.NK_BUTTON_LEFT):
+                                self.a[0] = row_layout[
+                                                0] + ctx.input.mouse.delta.x;
+                                self.b[0] = row_layout[
+                                                2] - ctx.input.mouse.delta.x;
+                            #
+                            #
+                            # /* middle space */
+                            # nk_layout_row_dynamic(ctx, b, 1);
+                            # if (nk_group_begin(ctx, "middle", NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_BORDER)) {
+                            #     nk_layout_row_dynamic(ctx, 25, 3);
+                            #     nk_button_label(ctx, "#FFAA");
+                            #     nk_button_label(ctx, "#FFBB");
+                            #     nk_button_label(ctx, "#FFCC");
+                            #     nk_button_label(ctx, "#FFDD");
+                            #     nk_button_label(ctx, "#FFEE");
+                            #     nk_button_label(ctx, "#FFFF");
+                            #     nk_group_end(ctx);
+                            # }
+                            pynk.lib.nk_layout_row_dynamic(ctx, self.b, 1)
+                            if pynk.lib.nk_group_begin(ctx, "middle", pynk.lib.NK_WINDOW_NO_SCROLLBAR|pynk.lib.NK_WINDOW_BORDER):
+                                pynk.lib.nk_layout_row_dynamic(ctx, 25, 3);
+                                pynk.lib.nk_button_label(ctx, "#FFAA");
+                                pynk.lib.nk_button_label(ctx, "#FFBB");
+                                pynk.lib.nk_button_label(ctx, "#FFCC");
+                                pynk.lib.nk_button_label(ctx, "#FFDD");
+                                pynk.lib.nk_button_label(ctx, "#FFEE");
+                                pynk.lib.nk_button_label(ctx, "#FFFF");
+                                pynk.lib.nk_group_end(ctx);
+                            #
+                            # {
+                            #     /* scaler */
+                            #     nk_layout_row_dynamic(ctx, 8, 1);
+                            #     bounds = nk_widget_bounds(ctx);
+                            #     if ((nk_input_is_mouse_hovering_rect(in, bounds) ||
+                            #         nk_input_is_mouse_prev_hovering_rect(in, bounds)) &&
+                            #         nk_input_is_mouse_down(in, NK_BUTTON_LEFT))
+                            #     {
+                            #         b = b + in->mouse.delta.y;
+                            #         c = c - in->mouse.delta.y;
+                            #     }
+                            # }
+                            pynk.lib.nk_layout_row_dynamic(ctx, 8, 1)
+                            bounds = pynk.lib.nk_widget_bounds(ctx)
+                            if (pynk.lib.nk_input_is_mouse_hovering_rect(ctx.input, bounds) or
+                                    pynk.lib.nk_input_is_mouse_prev_hovering_rect(ctx.input, bounds)) and \
+                                    pynk.lib.nk_input_is_mouse_down(ctx.input, pynk.lib.NK_BUTTON_LEFT):
+                                self.b[0] = self.b[0] + ctx.input.mouse.delta.y;
+                                self.c[0] = self.c[0] - ctx.input.mouse.delta.y;
+                            #
+                            # /* bottom space */
+                            # nk_layout_row_dynamic(ctx, c, 1);
+                            # if (nk_group_begin(ctx, "bottom", NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_BORDER)) {
+                            #     nk_layout_row_dynamic(ctx, 25, 3);
+                            #     nk_button_label(ctx, "#FFAA");
+                            #     nk_button_label(ctx, "#FFBB");
+                            #     nk_button_label(ctx, "#FFCC");
+                            #     nk_button_label(ctx, "#FFDD");
+                            #     nk_button_label(ctx, "#FFEE");
+                            #     nk_button_label(ctx, "#FFFF");
+                            #     nk_group_end(ctx);
+                            # }
+                            # nk_tree_pop(ctx);
+                            pynk.lib.nk_layout_row_dynamic(ctx, self.c, 1)
+                            if pynk.lib.nk_group_begin(ctx, "bottom", pynk.lib.NK_WINDOW_NO_SCROLLBAR|pynk.lib.NK_WINDOW_BORDER):
+                                pynk.lib.nk_layout_row_dynamic(ctx, 25, 3);
+                                pynk.lib.nk_button_label(ctx, "#FFAA");
+                                pynk.lib.nk_button_label(ctx, "#FFBB");
+                                pynk.lib.nk_button_label(ctx, "#FFCC");
+                                pynk.lib.nk_button_label(ctx, "#FFDD");
+                                pynk.lib.nk_button_label(ctx, "#FFEE");
+                                pynk.lib.nk_button_label(ctx, "#FFFF");
+                                pynk.lib.nk_group_end(ctx);
+                            pynk.lib.nk_tree_pop(ctx)
+                        # }
+                        # nk_tree_pop(ctx);
+                        pynk.lib.nk_tree_pop(ctx)
+                    # }
+                    # nk_tree_pop(ctx);
+                    pynk.lib.nk_tree_pop(ctx)
+                # }
+                pynk.lib.nk_tree_pop(ctx)# think tree nesting might be wrong...
+
+            pynk.lib.nk_tree_pop(ctx)
+        # }
+        # nk_end(ctx);
+        # return !nk_window_is_closed(ctx, "Overview");
+        #TODO: indentation got screwed up somewhere.
+        pynk.lib.nk_end(ctx)
+        return not pynk.lib.nk_window_is_closed(ctx, "Overview")
+    # }
