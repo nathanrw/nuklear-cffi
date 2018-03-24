@@ -12,18 +12,9 @@ preprocessor written in Python, so the preprocessing step doesn't actually
 require a C compiler to be installed.
 
 However, the process of generating the Python binding requires a C
-compiler.  On Linux this is fine, but on Windows this can't be taken for
-granted.  It should be possible to distribute binaries however...
+compiler.
 
 Some code for interfacing nuklear with pygame is provided under `pynk.nkpygame`.
-
-Status
-------
-
-Note that this is a *work in progress.*  While the limited functionality tested
-in demo.py appears to work, other areas may be broken or missing.  For instance
-functionality exposed via or reliant on macros is currently lost in the
-preprocessing step.  Additionally, packaging is not yet correct.
 
 Usage
 -----
@@ -48,6 +39,8 @@ Dependencies
 
  - cffi, a Python library.
  - pcpp, a C preprocessor written in Python.
+
+As such you will need a C compiler installed if you want to build the library.
 
 Note that at present the `pcpp` in pypi won't cut it, because in order to
 preprocess nuklear.h we rely on a fix that has not (as of writing) yet been

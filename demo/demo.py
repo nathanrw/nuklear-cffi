@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     # Initialise pygame.
     pygame.init()
-    screen = pygame.display.set_mode((800, 600))
+    screen = pygame.display.set_mode((1024, 768))
 
     # Some state for the GUI.
     EASY = 0
@@ -68,7 +68,9 @@ if __name__ == '__main__':
             pynk.lib.nk_end(nkpy.ctx)
 
             # Show the built-in overview GUI.
-            #pynk.lib.pynk_overview(nkpy.ctx)
+            pynk.lib.pynk_overview(nkpy.ctx)
+
+            # Show our version written in Python.
             overview.overview(nkpy.ctx)
 
             # Draw
