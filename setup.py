@@ -11,7 +11,7 @@ from setuptools import setup
 # See https://github.com/ned14/pcpp/pull/7
 
 setup(name='pynk',
-      version='0.1',
+      version='0.2',
       description='Python integration of the \'nuklear\' C library.',
       url='http://github.com/nathanrw/nuklear-cffi',
       author='Nathan Woodward',

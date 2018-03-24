@@ -7,3 +7,4 @@ nuklear.defs
 /build/*
 /pynk.egg-info/*
 /dist/*
+/.idea/*

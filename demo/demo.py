@@ -4,18 +4,18 @@
 A demo of the nuklear-cffi binding.
 """
 
-import collections
 import pygame
-import unicodedata
 
 import pynk
 import pynk.nkpygame
+
+from overview import Overview
 
 if __name__ == '__main__':
 
     # Initialise pygame.
     pygame.init()
-    screen = pygame.display.set_mode((800, 600))
+    screen = pygame.display.set_mode((1024, 768))
 
     # Some state for the GUI.
     EASY = 0
@@ -34,6 +34,8 @@ if __name__ == '__main__':
     # Initialise nuklear
     font = pygame.font.SysFont("Consolas", 14)
     with pynk.nkpygame.NkPygame(font) as nkpy:
+
+        overview = Overview()
         while running:
 
             # Handle input.
@@ -67,6 +69,9 @@ if __name__ == '__main__':
 
             # Show the built-in overview GUI.
             pynk.lib.pynk_overview(nkpy.ctx)
+
+            # Show our version written in Python.
+            overview.overview(nkpy.ctx)
 
             # Draw
             screen.fill((0, 0, 0))
