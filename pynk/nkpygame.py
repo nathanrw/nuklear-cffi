@@ -12,10 +12,88 @@ from _nuklear import ffi, lib
 @ffi.def_extern()
 def pynk_text_width_callback(handle, height, text, text_length):
     """ Text measurement callback. """
-    pygame_font = ffi.from_handle(handle.ptr)
+    nkfont = ffi.from_handle(handle.ptr)
     python_text = ffi.string(text, text_length)
-    width, height = pygame_font.size(python_text)
-    return width
+    return nkfont.text_width(height, python_text)
+
+
+
+@ffi.def_extern()
+def pynk_query_font_glyph_callback(handle, font_height, glyph, codepoint, next_codepoint):
+    """ Font glyph callback - for VBO outout. """
+    nkfont = ffi.from_handle(handle.ptr)
+    nkfont.query_glyph(font_height, glyph, codepoint, next_codepoint)
+
+
+class NkFont(object):
+    """ Abstract class for a font compatible with nuklear. """
+
+    def height(self):
+        """ Get the height of the font. """
+        return 0
+
+    def text_width(self, height, text):
+        """ Measure a string of text. """
+        return 0
+
+    def query_glyph(self, height, glyph, codepoint, next_codepoint):
+        """ Obtain texture coordinates for a glyph.  This is not necessary for
+        pygame software rendering - it will only be called if nk_convert() VBO
+        output is being used. """
+
+        # struct nk_user_font_glyph {
+        #     struct nk_vec2 uv[2];
+        #     /* texture coordinates */
+        #     struct nk_vec2 offset;
+        #     /* offset between top left and glyph */
+        #     float width, height;
+        #     /* size of the glyph  */
+        #     float xadvance;
+        #     /* offset to the next glyph */
+        # };
+
+        glyph.uv.x = 0
+        glyph.uv.y = 0
+        glyph.offset.x = 0
+        glyph.offset.y = 0
+        glyph.width = 0
+        glyph.height = 0
+        glyph.xadvance = 0;
+
+    def get_texture_id(self):
+        """ Obtain a texture id for font rendering.  If VBO output via
+        nk_convert() is not being used, then this is not necessary. """
+        return 0
+
+    def get_pygame_font(self):
+        """ Return a font that can be used as a pygame font for text rendering.
+
+        This is not necessary if pygame software rendering is not being used.
+        """
+        return None
+
+
+class NkPygameFont(NkFont):
+    """ Nuklear-compatible pygame font wrapper. """
+
+    def __init__(self, pygame_font):
+        """ Constructor. """
+        self.__pygame_font = pygame_font
+        NkFont.__init__(self)
+
+    def height(self):
+        """ Get the height of the text. """
+        return self.__pygame_font.get_height()
+
+    def text_width(self, height, text):
+        """ Measure a string of text. """
+        # Note: currently ignoring input height.
+        width, height = self.__pygame_font.size(text)
+        return width
+
+    def get_pygame_font(self):
+        """ Get the pygame font. """
+        return self.__pygame_font
 
 
 class NkPygame(object):
@@ -103,12 +181,14 @@ class NkPygame(object):
         thrown.  To use the instance, setup() must be called.  This can be
         done manually or via a 'with' statement.
         """
-        self.__pygame_font = font
-        self.__pygame_font_handle = ffi.new_handle(self.__pygame_font)
+        self.__font = font
+        self.__font_handle = ffi.new_handle(font)
         self.__nuklear_font = ffi.new("struct nk_user_font*")
-        self.__nuklear_font.userdata.ptr = self.__pygame_font_handle
-        self.__nuklear_font.height = self.__pygame_font.get_height()
+        self.__nuklear_font.userdata.ptr = self.__font_handle
+        self.__nuklear_font.height = self.__font.height()
         self.__nuklear_font.width = lib.pynk_text_width_callback
+        self.__nuklear_font.query = lib.pynk_query_font_glyph_callback
+        self.__nuklear_font.texture.id = self.__font.get_texture_id()
         self.__ctx = None
 
     @property
@@ -250,13 +330,15 @@ class NkPygame(object):
                 pygame.draw.polygon(screen, colour, points, c.line_thickness)
             elif nuklear_command.type == lib.NK_COMMAND_TEXT:
                 c = ffi.cast("struct nk_command_text*", nuklear_command)
-                pygame_font = ffi.from_handle(c.font.userdata.ptr)
-                text = ffi.string(c.string, c.length)
-                fg_colour = (c.foreground.r, c.foreground.g, c.foreground.b)
-                bg_colour = (c.background.r, c.background.g, c.background.b)
-                rect = pygame.Rect(c.x, c.y, c.w, c.h)
-                rendered = pygame_font.render(text, True, fg_colour, bg_colour)
-                screen.blit(rendered, rect.topleft)
+                font = ffi.from_handle(c.font.userdata.ptr)
+                pygame_font = font.get_pygame_font()
+                if pygame_font is not None:
+                    text = ffi.string(c.string, c.length)
+                    fg_colour = (c.foreground.r, c.foreground.g, c.foreground.b)
+                    bg_colour = (c.background.r, c.background.g, c.background.b)
+                    rect = pygame.Rect(c.x, c.y, c.w, c.h)
+                    rendered = pygame_font.render(text, True, fg_colour, bg_colour)
+                    screen.blit(rendered, rect.topleft)
             elif nuklear_command.type == lib.NK_COMMAND_CURVE:
                 pass
             elif nuklear_command.type == lib.NK_COMMAND_RECT_MULTI_COLOR:

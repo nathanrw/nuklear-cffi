@@ -134,6 +134,9 @@ def maker():
     void pynk_overview(struct nk_context *ctx);
     extern "Python" {
         float pynk_text_width_callback(nk_handle handle, float height, const char *text, int len);
+        void pynk_query_font_glyph_callback(nk_handle handle, float font_height,
+                                            struct nk_user_font_glyph *glyph,
+                                            nk_rune codepoint, nk_rune next_codepoint);
     }
     """
     overview_source = open(nuklear_overview_filename, 'r').read()
