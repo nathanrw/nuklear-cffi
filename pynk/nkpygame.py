@@ -52,8 +52,10 @@ class NkFont(object):
         #     /* offset to the next glyph */
         # };
 
-        glyph.uv.x = 0
-        glyph.uv.y = 0
+        glyph.uv[0].x = 0
+        glyph.uv[0].y = 0
+        glyph.uv[1].x = 0
+        glyph.uv[1].y = 0
         glyph.offset.x = 0
         glyph.offset.y = 0
         glyph.width = 0
