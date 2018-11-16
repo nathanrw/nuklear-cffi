@@ -32,7 +32,7 @@ if __name__ == '__main__':
               (pynk.lib.NK_WINDOW_TITLE, "Title") ]
 
     # Initialise nuklear
-    font = pygame.font.SysFont("Consolas", 14)
+    font = pynk.nkpygame.NkPygameFont(pygame.font.SysFont("Consolas", 14))
     with pynk.nkpygame.NkPygame(font) as nkpy:
 
         overview = Overview()
