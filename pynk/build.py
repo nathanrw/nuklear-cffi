@@ -12,13 +12,13 @@ import os
 import os.path
 import platform
 import StringIO
-from pcpp.preprocessor import Preprocessor
 
 
 def run_c_preprocessor(header_contents):
     """
     Run a C preprocessor on the given header file contents.
     """
+    from pcpp.preprocessor import Preprocessor
     cpp = Preprocessor()
     if platform.system() == "Windows":
         cpp.define("_MSC_VER")
@@ -46,7 +46,7 @@ def run_c_preprocessor(header_contents):
     return output.getvalue()
 
 
-def build_nuklear_defs(header, extra_cdef):
+def build_nuklear_defs(preprocessed_text, extra_cdef):
     """
     Preprocess the header file and extract declarations, writing the
     declarations to the given output filename.
@@ -55,15 +55,6 @@ def build_nuklear_defs(header, extra_cdef):
     are applied to remove problematic constructs - mostly compile-time arithmetic
     in enum declarations.
     """
-
-    # Define some options to prune the header.
-    header_only_options = """
-    #define NK_STATIC_ASSERT(X) 
-
-    """
-
-    print "Preprocessing header..."
-    preprocessed_text = run_c_preprocessor(header_only_options + header)
 
     print "Evaluating << expressions..."
     shift_expr = "\\(1 << \\(([0-9]+)\\)\\)"
@@ -117,6 +108,7 @@ def maker():
 
     # Names of the files we interact with.
     nuklear_header_filename = "nuklear/nuklear.h"
+    cached_preprocessed_header_filename = "nuklear_preprocessed.h"
     nuklear_overview_filename = "nuklear/demo/overview.c"
 
     # Define the source & header for nuklear with the options we want to use.
@@ -152,9 +144,31 @@ def maker():
         overview(ctx);
     }
     """
+    
+    # Define some options to prune the header.
+    header_only_options = """
+    #define NK_STATIC_ASSERT(X) 
+
+    """
+    
+    # Can avoid the need to preprocess the header by caching it.  It 
+    # can be a bit tricky to get pcpp working.
+    preprocessed_text = None
+    if os.path.exists(cached_preprocessed_header_filename):
+        print 
+        print "***************************************************************"
+        print "NOTE: Using cached preprocessed header from", cached_preprocessed_header_filename
+        print "      Any changes to the header will not have been propagated."
+        print "***************************************************************"
+        print 
+        preprocessed_text = open(cached_preprocessed_header_filename, 'r').read()
+    else:
+        print "Preprocessing header..."
+        preprocessed_text = run_c_preprocessor(header_only_options + header)
+        open(cached_preprocessed_header_filename, 'w').write(preprocessed_text)
 
     # Extract the 'cdef' text from the header file.
-    defs = build_nuklear_defs(header, extra_cdef)
+    defs = build_nuklear_defs(preprocessed_text, extra_cdef)
 
     # Now create the FFI builder.
     print "Creating ffi builder..."
