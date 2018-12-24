@@ -118,7 +118,7 @@ def maker():
     #define NK_INCLUDE_FONT_BAKING
     #define NK_INCLUDE_STANDARD_VARARGS
     """
-    header = opts + open(nuklear_header_filename, 'r').read()
+    header = opts + open(nuklear_header_filename, 'rU').read()
     source = """
     #define NK_IMPLEMENTATION
     """ + header
@@ -131,7 +131,7 @@ def maker():
                                             nk_rune codepoint, nk_rune next_codepoint);
     }
     """
-    overview_source = open(nuklear_overview_filename, 'r').read()
+    overview_source = open(nuklear_overview_filename, 'rU').read()
     source += """
     #define UNUSED(a) (void)a
     #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -161,7 +161,7 @@ def maker():
         print "      Any changes to the header will not have been propagated."
         print "***************************************************************"
         print 
-        preprocessed_text = open(cached_preprocessed_header_filename, 'r').read()
+        preprocessed_text = open(cached_preprocessed_header_filename, 'rU').read()
     else:
         print "Preprocessing header..."
         preprocessed_text = run_c_preprocessor(header_only_options + header)
