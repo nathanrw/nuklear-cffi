@@ -1,7 +1,7 @@
 nuklear-cffi
 ============
 
-![build](https://travis-ci.org/nathanrw/nuklear-cffi.svg?branch=master)
+.. image:: https://travis-ci.org/nathanrw/nuklear-cffi.svg?branch=master)
 
 A semi-automatic Python binding for the nuklear C library.
 
