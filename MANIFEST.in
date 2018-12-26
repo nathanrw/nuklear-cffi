@@ -1,3 +1,4 @@
 include README.rst
 include nuklear/demo/overview.c
 include nuklear_preprocessed.h
+include VERSION

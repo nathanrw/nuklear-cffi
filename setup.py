@@ -5,7 +5,7 @@ Setup script for 'pynk' library.
 from setuptools import setup
 
 setup(name='pynk',
-      version='0.4.1',
+      version=open("VERSION", "rU").read().strip(),
       description='Python integration of the \'nuklear\' C library.',
       url='http://github.com/nathanrw/nuklear-cffi',
       author='Nathan Woodward',
