@@ -15,5 +15,5 @@ deploy:
   skip_existing: true
   skip_cleanup: true
 after_deploy:
-  - pip uninstall pynk
+  - pip uninstall -y pynk
   - pip install pynk
