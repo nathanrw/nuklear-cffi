@@ -32,6 +32,7 @@ The package on pypi should work: https://pypi.python.org/pypi/pynk
 
 Otherwise
 
+.. code:: bash
     python2 setup.py install
 
 in the git repository should do it.
@@ -39,8 +40,8 @@ in the git repository should do it.
 Dependencies
 ------------
 
- - cffi, a Python library.
- - pcpp, a C preprocessor written in Python.
+- cffi, a Python library.
+- pcpp, a C preprocessor written in Python.
 
 As such you will need a C compiler installed if you want to build the library.
 
@@ -51,10 +52,8 @@ integrated.  You will have to install the one in my github fork.
 For the pygame integration code, `pygame` is necessary, but it's not a
 requirement for installation or to use the binding.
 
-Note to self: How to do a release
----------------------------------
+How to do a release
+-------------------
 
-- Make sure it builds, installs, and works.
-- Increment the version number in `setup.py`
-- `python2 setup.py sdist bdist_wheel`
-- `python2 -m twine upload dist/*`
+.. code:: bash
+    python ./bin/version.py (--major|--minor|--patch)
