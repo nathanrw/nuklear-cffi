@@ -75,7 +75,7 @@ def main():
     cmd("git", "add", "VERSION")
     cmd("git", "commit", "-m", "'Update to version %s'" % next_version)
     cmd("git", "tag", "-a", "v"+next_version, "-m", "'Tag version %s'" % next_version)
-    cmd("git", "push", "--tags")
+    cmd("git", "push", "origin", "--tags")
     
     
 def cmd(*args):
