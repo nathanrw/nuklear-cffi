@@ -3,6 +3,16 @@ python:
   - "2.7"
 install:
   - pip install -r requirements.txt
-script:
-  - python setup.py build
+  - python setup.py install
+deploy:
+  provider: pypi
+  user: "nathanrw"
+  password:
+    secure: "S6JG2PnuzumMYIe6a2Gm9KDpx9Cmd+ueaBE/ZgZ43ElJEm5CugULirQnPwQUxDH/afQZaCwdoQsyR3HuuN+MVGFPUJmkY8GztHwx/kU+zoLSYOEQxWSnguKuAJ3QG0VBOBmt1PI4VfI06N5oiJk35Ly/pR4H0UIpAazZ/pEAI5qlRJSUqC2THfSZOeI5H5iUqw8Q/luj0Kaft7Nr8ysD8+07HM13tdObeHDA/yyFMhGdHPyftkG7wXwXht16qQ3/DRXH6V/6xfT3TmS2g4J89L50fIN6CVnMlBIoJLIusDJSETQldRZ7wOzue8a250YQW78YytEZk7q3mRkbHZwb/moB7AGdFDxd/o28R9gq2vQnlYwHqoXqWZ5TQrBTIsi8k9Vfzla+yiAJ4j1G17YN6UlUgMOzbPtL6bDMZKLaROietUKqeVXRDjpxAQPynqd0DWEdO1ArNXGmf4W9Q4igWHRI2ApvJRbk/iZe20PvW3dl5H8ySN/amMTxoCpdSBxbNjpaSl3fjc2h4I/fhffSAYjFiB+xpIezzoEGDtqL5Xgv4wI75NLYLEF2V1es9KiuXgog5tBGDyE10FyrdVAcH9kkLEe/F6Ne2GIbKaGDy/50mAHNzgpqp4k3cQwN+03mEcPY3jFL/WpmlToJDgGpfFMgli4L7Yu9j2cHHgAXUS4="
+  on:
+    tags: true
+  skip_existing: true
+  skip_cleanup: true
+after_deploy:
+  - pip uninstall pynk
   - pip install pynk
