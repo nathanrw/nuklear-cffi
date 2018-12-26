@@ -32,8 +32,7 @@ The package on pypi should work: https://pypi.python.org/pypi/pynk
 
 Otherwise
 
-.. code:: bash
-    python2 setup.py install
+``python2 setup.py install``
 
 in the git repository should do it.
 
@@ -55,5 +54,7 @@ requirement for installation or to use the binding.
 How to do a release
 -------------------
 
-.. code:: bash
-    python ./bin/version.py (--major|--minor|--patch)
+The following script will increment the version, commit the change and push 
+a tag. The Travis build will then deploy a new version.
+
+``python ./bin/version.py (--major|--minor|--patch)``
