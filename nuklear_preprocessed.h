@@ -1,13 +1,13 @@
-#line 402
-typedef char nk_char;
-typedef unsigned char nk_uchar;
-typedef unsigned char nk_byte;
-typedef signed short nk_short;
-typedef unsigned short nk_ushort;
-typedef int nk_int;
-typedef unsigned int nk_uint;
-typedef unsigned int nk_size;
-typedef unsigned int nk_ptr;
+#line 414
+typedef int8_t nk_char;
+typedef uint8_t nk_uchar;
+typedef uint8_t nk_byte;
+typedef int16_t nk_short;
+typedef uint16_t nk_ushort;
+typedef int32_t nk_int;
+typedef uint32_t nk_uint;
+typedef uintptr_t nk_size;
+typedef uintptr_t nk_ptr;
 
 typedef nk_uint nk_hash;
 typedef nk_uint nk_flags;
@@ -70,18 +70,18 @@ struct nk_image {nk_handle handle;unsigned short w,h;unsigned short region[4];};
 struct nk_cursor {struct nk_image img; struct nk_vec2 size, offset;};
 struct nk_scroll {nk_uint x, y;};
 
-enum nk_heading {NK_UP, NK_RIGHT, NK_DOWN, NK_LEFT};
+enum nk_heading         {NK_UP, NK_RIGHT, NK_DOWN, NK_LEFT};
 enum nk_button_behavior {NK_BUTTON_DEFAULT, NK_BUTTON_REPEATER};
-enum nk_modify {NK_FIXED = nk_false, NK_MODIFIABLE = nk_true};
-enum nk_orientation {NK_VERTICAL, NK_HORIZONTAL};
+enum nk_modify          {NK_FIXED = nk_false, NK_MODIFIABLE = nk_true};
+enum nk_orientation     {NK_VERTICAL, NK_HORIZONTAL};
 enum nk_collapse_states {NK_MINIMIZED = nk_false, NK_MAXIMIZED = nk_true};
-enum nk_show_states {NK_HIDDEN = nk_false, NK_SHOWN = nk_true};
-enum nk_chart_type {NK_CHART_LINES, NK_CHART_COLUMN, NK_CHART_MAX};
-enum nk_chart_event {NK_CHART_HOVERING = 0x01, NK_CHART_CLICKED = 0x02};
-enum nk_color_format {NK_RGB, NK_RGBA};
-enum nk_popup_type {NK_POPUP_STATIC, NK_POPUP_DYNAMIC};
-enum nk_layout_format {NK_DYNAMIC, NK_STATIC};
-enum nk_tree_type {NK_TREE_NODE, NK_TREE_TAB};
+enum nk_show_states     {NK_HIDDEN = nk_false, NK_SHOWN = nk_true};
+enum nk_chart_type      {NK_CHART_LINES, NK_CHART_COLUMN, NK_CHART_MAX};
+enum nk_chart_event     {NK_CHART_HOVERING = 0x01, NK_CHART_CLICKED = 0x02};
+enum nk_color_format    {NK_RGB, NK_RGBA};
+enum nk_popup_type      {NK_POPUP_STATIC, NK_POPUP_DYNAMIC};
+enum nk_layout_format   {NK_DYNAMIC, NK_STATIC};
+enum nk_tree_type       {NK_TREE_NODE, NK_TREE_TAB};
 
 typedef void*(*nk_plugin_alloc)(nk_handle, void *old, nk_size);
 typedef void (*nk_plugin_free)(nk_handle, void *old);
@@ -110,13 +110,13 @@ enum nk_symbol_type {
     NK_SYMBOL_MINUS,
     NK_SYMBOL_MAX
 };
-#line 557
+#line 569
 extern int nk_init_default(struct nk_context*, const struct nk_user_font*);
-#line 573
+#line 585
 extern int nk_init_fixed(struct nk_context*, void *memory, nk_size size, const struct nk_user_font*);
-#line 584
-extern int nk_init(struct nk_context*, struct nk_allocator*, const struct nk_user_font*);
 #line 596
+extern int nk_init(struct nk_context*, struct nk_allocator*, const struct nk_user_font*);
+#line 608
 extern int nk_init_custom(struct nk_context*, struct nk_buffer *cmds, struct nk_buffer *pool, const struct nk_user_font*);
 
 
@@ -129,7 +129,7 @@ extern void nk_clear(struct nk_context*);
 
 
 extern void nk_free(struct nk_context*);
-#line 668
+#line 680
 enum nk_keys {
     NK_KEY_NONE,
     NK_KEY_SHIFT,
@@ -189,7 +189,7 @@ extern void nk_input_motion(struct nk_context*, int x, int y);
 
 
 extern void nk_input_key(struct nk_context*, enum nk_keys, int down);
-#line 734
+#line 746
 extern void nk_input_button(struct nk_context*, enum nk_buttons, int x, int y, int down);
 
 
@@ -198,18 +198,18 @@ extern void nk_input_button(struct nk_context*, enum nk_buttons, int x, int y, i
 
 
 extern void nk_input_scroll(struct nk_context*, struct nk_vec2 val);
-#line 749
+#line 761
 extern void nk_input_char(struct nk_context*, char);
-#line 757
+#line 769
 extern void nk_input_glyph(struct nk_context*, const nk_glyph);
-#line 765
+#line 777
 extern void nk_input_unicode(struct nk_context*, nk_rune);
 
 
 
 
 extern void nk_input_end(struct nk_context*);
-#line 977
+#line 989
 enum nk_anti_aliasing {NK_ANTI_ALIASING_OFF, NK_ANTI_ALIASING_ON};
 enum nk_convert_result {
     NK_CONVERT_SUCCESS = 0,
@@ -248,7 +248,7 @@ extern const struct nk_command* nk__begin(struct nk_context*);
 
 
 extern const struct nk_command* nk__next(struct nk_context*, const struct nk_command*);
-#line 1033
+#line 1045
 extern nk_flags nk_convert(struct nk_context*, struct nk_buffer *cmds, struct nk_buffer *vertices, struct nk_buffer *elements, const struct nk_convert_config*);
 
 
@@ -264,25 +264,25 @@ extern const struct nk_draw_command* nk__draw_begin(const struct nk_context*, co
 
 
 extern const struct nk_draw_command* nk__draw_end(const struct nk_context*, const struct nk_buffer*);
-#line 1055
+#line 1067
 extern const struct nk_draw_command* nk__draw_next(const struct nk_draw_command*, const struct nk_buffer*, const struct nk_context*);
-#line 1181
+#line 1193
 enum nk_panel_flags {
-    NK_WINDOW_BORDER = (1 << (0)),
-    NK_WINDOW_MOVABLE = (1 << (1)),
-    NK_WINDOW_SCALABLE = (1 << (2)),
-    NK_WINDOW_CLOSABLE = (1 << (3)),
-    NK_WINDOW_MINIMIZABLE = (1 << (4)),
-    NK_WINDOW_NO_SCROLLBAR = (1 << (5)),
-    NK_WINDOW_TITLE = (1 << (6)),
-    NK_WINDOW_SCROLL_AUTO_HIDE = (1 << (7)),
-    NK_WINDOW_BACKGROUND = (1 << (8)),
-    NK_WINDOW_SCALE_LEFT = (1 << (9)),
-    NK_WINDOW_NO_INPUT = (1 << (10))
+    NK_WINDOW_BORDER            = (1 << (0)),
+    NK_WINDOW_MOVABLE           = (1 << (1)),
+    NK_WINDOW_SCALABLE          = (1 << (2)),
+    NK_WINDOW_CLOSABLE          = (1 << (3)),
+    NK_WINDOW_MINIMIZABLE       = (1 << (4)),
+    NK_WINDOW_NO_SCROLLBAR      = (1 << (5)),
+    NK_WINDOW_TITLE             = (1 << (6)),
+    NK_WINDOW_SCROLL_AUTO_HIDE  = (1 << (7)),
+    NK_WINDOW_BACKGROUND        = (1 << (8)),
+    NK_WINDOW_SCALE_LEFT        = (1 << (9)),
+    NK_WINDOW_NO_INPUT          = (1 << (10))
 };
-#line 1202
+#line 1214
 extern int nk_begin(struct nk_context *ctx, const char *title, struct nk_rect bounds, nk_flags flags);
-#line 1212
+#line 1224
 extern int nk_begin_titled(struct nk_context *ctx, const char *name, const char *title, struct nk_rect bounds, nk_flags flags);
 
 
@@ -421,7 +421,7 @@ extern int nk_window_is_hovered(struct nk_context*);
 
 
 extern int nk_window_is_any_hovered(struct nk_context*);
-#line 1357
+#line 1369
 extern int nk_item_is_any_active(struct nk_context*);
 
 
@@ -479,7 +479,7 @@ extern void nk_window_show(struct nk_context*, const char *name, enum nk_show_st
 
 
 extern void nk_window_show_if(struct nk_context*, const char *name, enum nk_show_states, int cond);
-#line 1677
+#line 1689
 extern void nk_layout_set_min_row_height(struct nk_context*, float height);
 
 
@@ -495,9 +495,9 @@ extern struct nk_rect nk_layout_widget_bounds(struct nk_context*);
 
 
 extern float nk_layout_ratio_from_pixel(struct nk_context*, float pixel_width);
-#line 1699
+#line 1711
 extern void nk_layout_row_dynamic(struct nk_context *ctx, float height, int cols);
-#line 1708
+#line 1720
 extern void nk_layout_row_static(struct nk_context *ctx, float height, int item_width, int cols);
 
 
@@ -611,7 +611,7 @@ struct nk_list_view {
 };
 extern int nk_list_view_begin(struct nk_context*, struct nk_list_view *out, const char *id, nk_flags, int row_height, int row_count);
 extern void nk_list_view_end(struct nk_list_view*);
-#line 1828
+#line 1840
 extern int nk_tree_push_hashed(struct nk_context*, enum nk_tree_type, const char *title, enum nk_collapse_states initial_state, const char *hash, int len,int seed);
 
 
@@ -631,14 +631,14 @@ enum nk_widget_layout_states {
     NK_WIDGET_ROM
 };
 enum nk_widget_states {
-    NK_WIDGET_STATE_MODIFIED = (1 << (1)),
-    NK_WIDGET_STATE_INACTIVE = (1 << (2)),
-    NK_WIDGET_STATE_ENTERED = (1 << (3)),
-    NK_WIDGET_STATE_HOVER = (1 << (4)),
-    NK_WIDGET_STATE_ACTIVED = (1 << (5)),
-    NK_WIDGET_STATE_LEFT = (1 << (6)),
-    NK_WIDGET_STATE_HOVERED = NK_WIDGET_STATE_HOVER|NK_WIDGET_STATE_MODIFIED,
-    NK_WIDGET_STATE_ACTIVE = NK_WIDGET_STATE_ACTIVED|NK_WIDGET_STATE_MODIFIED
+    NK_WIDGET_STATE_MODIFIED    = (1 << (1)),
+    NK_WIDGET_STATE_INACTIVE    = (1 << (2)),
+    NK_WIDGET_STATE_ENTERED     = (1 << (3)),
+    NK_WIDGET_STATE_HOVER       = (1 << (4)),
+    NK_WIDGET_STATE_ACTIVED     = (1 << (5)),
+    NK_WIDGET_STATE_LEFT        = (1 << (6)),
+    NK_WIDGET_STATE_HOVERED     = NK_WIDGET_STATE_HOVER|NK_WIDGET_STATE_MODIFIED,
+    NK_WIDGET_STATE_ACTIVE      = NK_WIDGET_STATE_ACTIVED|NK_WIDGET_STATE_MODIFIED
 };
 extern enum nk_widget_layout_states nk_widget(struct nk_rect*, const struct nk_context*);
 extern enum nk_widget_layout_states nk_widget_fitting(struct nk_rect*, struct nk_context*, struct nk_vec2);
@@ -657,17 +657,17 @@ extern void nk_spacing(struct nk_context*, int cols);
 
 
 enum nk_text_align {
-    NK_TEXT_ALIGN_LEFT = 0x01,
-    NK_TEXT_ALIGN_CENTERED = 0x02,
-    NK_TEXT_ALIGN_RIGHT = 0x04,
-    NK_TEXT_ALIGN_TOP = 0x08,
-    NK_TEXT_ALIGN_MIDDLE = 0x10,
-    NK_TEXT_ALIGN_BOTTOM = 0x20
+    NK_TEXT_ALIGN_LEFT        = 0x01,
+    NK_TEXT_ALIGN_CENTERED    = 0x02,
+    NK_TEXT_ALIGN_RIGHT       = 0x04,
+    NK_TEXT_ALIGN_TOP         = 0x08,
+    NK_TEXT_ALIGN_MIDDLE      = 0x10,
+    NK_TEXT_ALIGN_BOTTOM      = 0x20
 };
 enum nk_text_alignment {
-    NK_TEXT_LEFT = NK_TEXT_ALIGN_MIDDLE|NK_TEXT_ALIGN_LEFT,
-    NK_TEXT_CENTERED = NK_TEXT_ALIGN_MIDDLE|NK_TEXT_ALIGN_CENTERED,
-    NK_TEXT_RIGHT = NK_TEXT_ALIGN_MIDDLE|NK_TEXT_ALIGN_RIGHT
+    NK_TEXT_LEFT        = NK_TEXT_ALIGN_MIDDLE|NK_TEXT_ALIGN_LEFT,
+    NK_TEXT_CENTERED    = NK_TEXT_ALIGN_MIDDLE|NK_TEXT_ALIGN_CENTERED,
+    NK_TEXT_RIGHT       = NK_TEXT_ALIGN_MIDDLE|NK_TEXT_ALIGN_RIGHT
 };
 extern void nk_text(struct nk_context*, const char*, int, nk_flags);
 extern void nk_text_colored(struct nk_context*, const char*, int, nk_flags, struct nk_color);
@@ -745,7 +745,7 @@ extern int nk_option_text(struct nk_context*, const char*, int, int active);
 
 extern int nk_selectable_label(struct nk_context*, const char*, nk_flags align, int *value);
 extern int nk_selectable_text(struct nk_context*, const char*, int, nk_flags align, int *value);
-extern int nk_selectable_image_label(struct nk_context*,struct nk_image, const char*, nk_flags align, int *value);
+extern int nk_selectable_image_label(struct nk_context*,struct nk_image,  const char*, nk_flags align, int *value);
 extern int nk_selectable_image_text(struct nk_context*,struct nk_image, const char*, int, nk_flags align, int *value);
 extern int nk_select_label(struct nk_context*, const char*, nk_flags align, int value);
 extern int nk_select_text(struct nk_context*, const char*, int, nk_flags align, int value);
@@ -792,32 +792,32 @@ extern double nk_propertyd(struct nk_context*, const char *name, double min, dou
 
 
 enum nk_edit_flags {
-    NK_EDIT_DEFAULT = 0,
-    NK_EDIT_READ_ONLY = (1 << (0)),
-    NK_EDIT_AUTO_SELECT = (1 << (1)),
-    NK_EDIT_SIG_ENTER = (1 << (2)),
-    NK_EDIT_ALLOW_TAB = (1 << (3)),
-    NK_EDIT_NO_CURSOR = (1 << (4)),
-    NK_EDIT_SELECTABLE = (1 << (5)),
-    NK_EDIT_CLIPBOARD = (1 << (6)),
-    NK_EDIT_CTRL_ENTER_NEWLINE = (1 << (7)),
-    NK_EDIT_NO_HORIZONTAL_SCROLL = (1 << (8)),
-    NK_EDIT_ALWAYS_INSERT_MODE = (1 << (9)),
-    NK_EDIT_MULTILINE = (1 << (10)),
-    NK_EDIT_GOTO_END_ON_ACTIVATE = (1 << (11))
+    NK_EDIT_DEFAULT                 = 0,
+    NK_EDIT_READ_ONLY               = (1 << (0)),
+    NK_EDIT_AUTO_SELECT             = (1 << (1)),
+    NK_EDIT_SIG_ENTER               = (1 << (2)),
+    NK_EDIT_ALLOW_TAB               = (1 << (3)),
+    NK_EDIT_NO_CURSOR               = (1 << (4)),
+    NK_EDIT_SELECTABLE              = (1 << (5)),
+    NK_EDIT_CLIPBOARD               = (1 << (6)),
+    NK_EDIT_CTRL_ENTER_NEWLINE      = (1 << (7)),
+    NK_EDIT_NO_HORIZONTAL_SCROLL    = (1 << (8)),
+    NK_EDIT_ALWAYS_INSERT_MODE      = (1 << (9)),
+    NK_EDIT_MULTILINE               = (1 << (10)),
+    NK_EDIT_GOTO_END_ON_ACTIVATE    = (1 << (11))
 };
 enum nk_edit_types {
-    NK_EDIT_SIMPLE = NK_EDIT_ALWAYS_INSERT_MODE,
-    NK_EDIT_FIELD = NK_EDIT_SIMPLE|NK_EDIT_SELECTABLE|NK_EDIT_CLIPBOARD,
-    NK_EDIT_BOX = NK_EDIT_ALWAYS_INSERT_MODE| NK_EDIT_SELECTABLE| NK_EDIT_MULTILINE|NK_EDIT_ALLOW_TAB|NK_EDIT_CLIPBOARD,
-    NK_EDIT_EDITOR = NK_EDIT_SELECTABLE|NK_EDIT_MULTILINE|NK_EDIT_ALLOW_TAB| NK_EDIT_CLIPBOARD
+    NK_EDIT_SIMPLE  = NK_EDIT_ALWAYS_INSERT_MODE,
+    NK_EDIT_FIELD   = NK_EDIT_SIMPLE|NK_EDIT_SELECTABLE|NK_EDIT_CLIPBOARD,
+    NK_EDIT_BOX     = NK_EDIT_ALWAYS_INSERT_MODE| NK_EDIT_SELECTABLE| NK_EDIT_MULTILINE|NK_EDIT_ALLOW_TAB|NK_EDIT_CLIPBOARD,
+    NK_EDIT_EDITOR  = NK_EDIT_SELECTABLE|NK_EDIT_MULTILINE|NK_EDIT_ALLOW_TAB| NK_EDIT_CLIPBOARD
 };
 enum nk_edit_events {
-    NK_EDIT_ACTIVE = (1 << (0)),
-    NK_EDIT_INACTIVE = (1 << (1)),
-    NK_EDIT_ACTIVATED = (1 << (2)),
+    NK_EDIT_ACTIVE      = (1 << (0)),
+    NK_EDIT_INACTIVE    = (1 << (1)),
+    NK_EDIT_ACTIVATED   = (1 << (2)),
     NK_EDIT_DEACTIVATED = (1 << (3)),
-    NK_EDIT_COMMITED = (1 << (4))
+    NK_EDIT_COMMITED    = (1 << (4))
 };
 extern nk_flags nk_edit_string(struct nk_context*, nk_flags, char *buffer, int *len, int max, nk_plugin_filter);
 extern nk_flags nk_edit_string_zero_terminated(struct nk_context*, nk_flags, char *buffer, int max, nk_plugin_filter);
@@ -867,12 +867,12 @@ extern void nk_combobox_callback(struct nk_context*, void(*item_getter)(void*, i
 extern int nk_combo_begin_text(struct nk_context*, const char *selected, int, struct nk_vec2 size);
 extern int nk_combo_begin_label(struct nk_context*, const char *selected, struct nk_vec2 size);
 extern int nk_combo_begin_color(struct nk_context*, struct nk_color color, struct nk_vec2 size);
-extern int nk_combo_begin_symbol(struct nk_context*, enum nk_symbol_type, struct nk_vec2 size);
+extern int nk_combo_begin_symbol(struct nk_context*,  enum nk_symbol_type,  struct nk_vec2 size);
 extern int nk_combo_begin_symbol_label(struct nk_context*, const char *selected, enum nk_symbol_type, struct nk_vec2 size);
 extern int nk_combo_begin_symbol_text(struct nk_context*, const char *selected, int, enum nk_symbol_type, struct nk_vec2 size);
-extern int nk_combo_begin_image(struct nk_context*, struct nk_image img, struct nk_vec2 size);
+extern int nk_combo_begin_image(struct nk_context*, struct nk_image img,  struct nk_vec2 size);
 extern int nk_combo_begin_image_label(struct nk_context*, const char *selected, struct nk_image, struct nk_vec2 size);
-extern int nk_combo_begin_image_text(struct nk_context*, const char *selected, int, struct nk_image, struct nk_vec2 size);
+extern int nk_combo_begin_image_text(struct nk_context*,  const char *selected, int, struct nk_image, struct nk_vec2 size);
 extern int nk_combo_item_label(struct nk_context*, const char*, nk_flags alignment);
 extern int nk_combo_item_text(struct nk_context*, const char*,int, nk_flags alignment);
 extern int nk_combo_item_image_label(struct nk_context*, struct nk_image, const char*, nk_flags alignment);
@@ -1111,7 +1111,7 @@ extern int nk_utf_decode(const char*, nk_rune*, int);
 extern int nk_utf_encode(nk_rune, char*, int);
 extern int nk_utf_len(const char*, int byte_len);
 extern const char* nk_utf_at(const char *buffer, int length, int index, nk_rune *unicode, int *len);
-#line 2476
+#line 2488
 struct nk_user_font_glyph;
 typedef float(*nk_text_width_f)(nk_handle, float h, const char*, int len);
 typedef void(*nk_query_font_glyph_f)(nk_handle handle, float font_height,
@@ -1273,7 +1273,7 @@ extern void nk_font_atlas_end(struct nk_font_atlas*, nk_handle tex, struct nk_dr
 extern const struct nk_font_glyph* nk_font_find_glyph(struct nk_font*, nk_rune unicode);
 extern void nk_font_atlas_cleanup(struct nk_font_atlas *atlas);
 extern void nk_font_atlas_clear(struct nk_font_atlas*);
-#line 2673
+#line 2685
 struct nk_memory_status {
     void *memory;
     unsigned int type;
@@ -1335,7 +1335,7 @@ extern void nk_buffer_free(struct nk_buffer*);
 extern void *nk_buffer_memory(struct nk_buffer*);
 extern const void *nk_buffer_memory_const(const struct nk_buffer*);
 extern nk_size nk_buffer_total(struct nk_buffer*);
-#line 2745
+#line 2757
 struct nk_str {
     struct nk_buffer buffer;
     int len;
@@ -1381,7 +1381,7 @@ extern char *nk_str_get(struct nk_str*);
 extern const char *nk_str_get_const(const struct nk_str*);
 extern int nk_str_len(struct nk_str*);
 extern int nk_str_len_char(struct nk_str*);
-#line 2827
+#line 2839
 struct nk_text_edit;
 struct nk_clipboard {
     nk_handle userdata;
@@ -1460,7 +1460,7 @@ extern int nk_textedit_cut(struct nk_text_edit*);
 extern int nk_textedit_paste(struct nk_text_edit*, char const*, int len);
 extern void nk_textedit_undo(struct nk_text_edit*);
 extern void nk_textedit_redo(struct nk_text_edit*);
-#line 2955
+#line 2967
 enum nk_command_type {
     NK_COMMAND_NOP,
     NK_COMMAND_SCISSOR,
@@ -1732,7 +1732,7 @@ extern int nk_input_is_mouse_released(const struct nk_input*, enum nk_buttons);
 extern int nk_input_is_key_pressed(const struct nk_input*, enum nk_keys);
 extern int nk_input_is_key_released(const struct nk_input*, enum nk_keys);
 extern int nk_input_is_key_down(const struct nk_input*, enum nk_keys);
-#line 3246
+#line 3258
 typedef nk_ushort nk_draw_index;
 enum nk_draw_list_stroke {
     NK_STROKE_OPEN = nk_false,
@@ -1860,7 +1860,7 @@ extern void nk_draw_list_fill_poly_convex(struct nk_draw_list*, const struct nk_
 
 extern void nk_draw_list_add_image(struct nk_draw_list*, struct nk_image texture, struct nk_rect rect, struct nk_color);
 extern void nk_draw_list_add_text(struct nk_draw_list*, const struct nk_user_font*, struct nk_rect, const char *text, int len, float font_height, struct nk_color);
-#line 3384
+#line 3396
 enum nk_style_item_type {
     NK_STYLE_ITEM_COLOR,
     NK_STYLE_ITEM_IMAGE
@@ -2297,15 +2297,15 @@ struct nk_style {
 extern struct nk_style_item nk_style_item_image(struct nk_image img);
 extern struct nk_style_item nk_style_item_color(struct nk_color);
 extern struct nk_style_item nk_style_item_hide(void);
-#line 3831
+#line 3843
 enum nk_panel_type {
-    NK_PANEL_WINDOW = (1 << (0)),
-    NK_PANEL_GROUP = (1 << (1)),
-    NK_PANEL_POPUP = (1 << (2)),
+    NK_PANEL_WINDOW     = (1 << (0)),
+    NK_PANEL_GROUP      = (1 << (1)),
+    NK_PANEL_POPUP      = (1 << (2)),
     NK_PANEL_CONTEXTUAL = (1 << (4)),
-    NK_PANEL_COMBO = (1 << (5)),
-    NK_PANEL_MENU = (1 << (6)),
-    NK_PANEL_TOOLTIP = (1 << (7))
+    NK_PANEL_COMBO      = (1 << (5)),
+    NK_PANEL_MENU       = (1 << (6)),
+    NK_PANEL_TOOLTIP    = (1 << (7))
 };
 enum nk_panel_set {
     NK_PANEL_SET_NONBLOCK = NK_PANEL_CONTEXTUAL|NK_PANEL_COMBO|NK_PANEL_MENU|NK_PANEL_TOOLTIP,
@@ -2388,23 +2388,23 @@ struct nk_panel {
     struct nk_command_buffer *buffer;
     struct nk_panel *parent;
 };
-#line 3929
+#line 3941
 struct nk_table;
 enum nk_window_flags {
-    NK_WINDOW_PRIVATE = (1 << (11)),
-    NK_WINDOW_DYNAMIC = NK_WINDOW_PRIVATE,
+    NK_WINDOW_PRIVATE       = (1 << (11)),
+    NK_WINDOW_DYNAMIC       = NK_WINDOW_PRIVATE,
 
-    NK_WINDOW_ROM = (1 << (12)),
+    NK_WINDOW_ROM           = (1 << (12)),
 
     NK_WINDOW_NOT_INTERACTIVE = NK_WINDOW_ROM|NK_WINDOW_NO_INPUT,
 
-    NK_WINDOW_HIDDEN = (1 << (13)),
+    NK_WINDOW_HIDDEN        = (1 << (13)),
 
-    NK_WINDOW_CLOSED = (1 << (14)),
+    NK_WINDOW_CLOSED        = (1 << (14)),
 
-    NK_WINDOW_MINIMIZED = (1 << (15)),
+    NK_WINDOW_MINIMIZED     = (1 << (15)),
 
-    NK_WINDOW_REMOVE_ROM = (1 << (16))
+    NK_WINDOW_REMOVE_ROM    = (1 << (16))
 
 };
 
@@ -2472,22 +2472,22 @@ struct nk_window {
     struct nk_window *prev;
     struct nk_window *parent;
 };
-#line 4078
-struct nk_config_stack_style_item_element { struct nk_style_item *address; struct nk_style_item old_value; };
-struct nk_config_stack_float_element { float *address; float old_value; };
-struct nk_config_stack_vec2_element { struct nk_vec2 *address; struct nk_vec2 old_value; };
-struct nk_config_stack_flags_element { nk_flags *address; nk_flags old_value; };
-struct nk_config_stack_color_element { struct nk_color *address; struct nk_color old_value; };
-struct nk_config_stack_user_font_element { const struct nk_user_font* *address; const struct nk_user_font* old_value; };
-struct nk_config_stack_button_behavior_element { enum nk_button_behavior *address; enum nk_button_behavior old_value; };
+#line 4090
+struct nk_config_stack_style_item_element {        struct nk_style_item *address;        struct nk_style_item old_value;    };
+struct nk_config_stack_float_element {        float *address;        float old_value;    };
+struct nk_config_stack_vec2_element {        struct nk_vec2 *address;        struct nk_vec2 old_value;    };
+struct nk_config_stack_flags_element {        nk_flags *address;        nk_flags old_value;    };
+struct nk_config_stack_color_element {        struct nk_color *address;        struct nk_color old_value;    };
+struct nk_config_stack_user_font_element {        const struct nk_user_font* *address;        const struct nk_user_font* old_value;    };
+struct nk_config_stack_button_behavior_element {        enum nk_button_behavior *address;        enum nk_button_behavior old_value;    };
 
-struct nk_config_stack_style_item { int head; struct nk_config_stack_style_item_element elements[16]; };
-struct nk_config_stack_float { int head; struct nk_config_stack_float_element elements[32]; };
-struct nk_config_stack_vec2 { int head; struct nk_config_stack_vec2_element elements[16]; };
-struct nk_config_stack_flags { int head; struct nk_config_stack_flags_element elements[32]; };
-struct nk_config_stack_color { int head; struct nk_config_stack_color_element elements[32]; };
-struct nk_config_stack_user_font { int head; struct nk_config_stack_user_font_element elements[8]; };
-struct nk_config_stack_button_behavior { int head; struct nk_config_stack_button_behavior_element elements[8]; };
+struct nk_config_stack_style_item {        int head;        struct nk_config_stack_style_item_element elements[16];    };
+struct nk_config_stack_float {        int head;        struct nk_config_stack_float_element elements[32];    };
+struct nk_config_stack_vec2 {        int head;        struct nk_config_stack_vec2_element elements[16];    };
+struct nk_config_stack_flags {        int head;        struct nk_config_stack_flags_element elements[32];    };
+struct nk_config_stack_color {        int head;        struct nk_config_stack_color_element elements[32];    };
+struct nk_config_stack_user_font {        int head;        struct nk_config_stack_user_font_element elements[8];    };
+struct nk_config_stack_button_behavior {        int head;        struct nk_config_stack_button_behavior_element elements[8];    };
 
 struct nk_configuration_stacks {
     struct nk_config_stack_style_item style_items;
@@ -2498,7 +2498,7 @@ struct nk_configuration_stacks {
     struct nk_config_stack_user_font fonts;
     struct nk_config_stack_button_behavior button_behaviors;
 };
-#line 4110
+#line 4122
 struct nk_table {
     unsigned int seq;
     unsigned int size;
@@ -2552,7 +2552,7 @@ struct nk_context {
 
 
     struct nk_draw_list draw_list;
-#line 4171
+#line 4183
     struct nk_text_edit text_edit;
 
     struct nk_command_buffer overlay;

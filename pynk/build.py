@@ -20,26 +20,6 @@ def run_c_preprocessor(header_contents):
     """
     from pcpp.preprocessor import Preprocessor
     cpp = Preprocessor()
-    if platform.system() == "Windows":
-        cpp.define("_MSC_VER")
-		
-		# NOTE: the cffi 'cdef' parser doesn't appear to understand
-		# the windows '__int32'.  So give it a definition.
-		#   - Not entirely sure what the ramifications of this are,
-		#     but it now compiles and runs on Windows...
-		#   - A better solution here would probably be to define 
-		#     NK_INT32 ourselves as int32_t.
-        cpp.define ("__int32 int")
-		
-        if platform.architecture()[0] == "64bit":
-            cpp.define("_WIN64")
-        else:
-            cpp.define("WIN32")
-            cpp.define("_WIN32")
-    else:
-        cpp.define("__GNUC__")
-        if platform.architecture()[0] == "64bit":
-            cpp.define("__x86_64__")
     cpp.parse(header_contents)
     output = StringIO.StringIO()
     cpp.write(output)
@@ -117,6 +97,18 @@ def maker():
     #define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
     #define NK_INCLUDE_FONT_BAKING
     #define NK_INCLUDE_STANDARD_VARARGS
+    
+    // cffi already includes stdint, so we can just use the fixed-width types
+    // here.  defining the FIXED_TYPES thingy causes stdint.h to actually get
+    // pulled in when parsing the cdef (since we preprocess the header.)
+    #define NK_INT8 int8_t
+    #define NK_UINT8 uint8_t
+    #define NK_INT16 int16_t
+    #define NK_UINT16 uint16_t
+    #define NK_INT32 int32_t
+    #define NK_UINT32 uint32_t
+    #define NK_SIZE_TYPE uintptr_t
+    #define NK_POINTER_TYPE uintptr_t
     """
     header = opts + open(nuklear_header_filename, 'rU').read()
     source = """
